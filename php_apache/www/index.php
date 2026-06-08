@@ -348,7 +348,7 @@
 				const val = [...selects].map(el => el.value).filter(val => val !== "");
 				Array.from(selects).forEach(el => {
 					[...el.options].forEach(option => {
-						if (option.value !== '' && val.includes(option.value) && option.value !== el.value)
+						if (option.value !== "" && val.includes(option.value) && option.value !== el.value)
 							option.disabled = true;
 					});
 				});

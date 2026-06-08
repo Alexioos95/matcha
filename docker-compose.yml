@@ -10,7 +10,8 @@ services:
         env_file:
             - .env
         volumes:
-            - ./php_apache/www:/var/www/html
+            # - ./php_apache/www:/var/www/html
+            - apache_www:/var/www/html
         depends_on:
             - mysql
 
@@ -39,5 +40,5 @@ services:
             - mysql_db:/var/lib/mysql
 
 volumes:
-#     apache_www:
+    apache_www:
     mysql_db:
