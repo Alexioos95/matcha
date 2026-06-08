@@ -13,10 +13,10 @@ RUN a2ensite 000-default-ssl
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-COPY ./www/ /var/www/html/
-RUN mkdir -p /var/www/html/uploads && \
-	chown -R www-data:www-data /var/www/html/uploads && \
-	chmod -R 775 /var/www/html/uploads
+# COPY ./www/ /var/www/html/
+# RUN mkdir -p /var/www/html/uploads && \
+# 	chown -R www-data:www-data /var/www/html/uploads && \
+# 	chmod -R 775 /var/www/html/uploads
 
 COPY ./script /usr/local/bin/script
 RUN chmod 755 /usr/local/bin/script

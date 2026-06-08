@@ -25,9 +25,6 @@ populate:
 # 			1 to 500
 # 			user@1.com/user1:user1
 
-fixvol:
-		docker run --rm -it -v matcha_mysql_db:/data alpine sh -c "rm -rf /data/mysql.sock; rm -rf /data/*.sock; rm -rf /data/*.pid"
-
 prune:
 		make clean
 		docker system prune
