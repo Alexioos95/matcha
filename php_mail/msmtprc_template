@@ -1,0 +1,14 @@
+# /etc/msmtprc
+defaults
+auth           on
+tls            on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile        /var/log/msmtp.log
+
+account        gmail
+host           smtp.gmail.com
+port           587
+user           ${GMAIL_SENDER}
+from           ${GMAIL_SENDER}
+passwordeval   "echo ${GMAIL_APP_PASSWORD}"
+account default : gmail

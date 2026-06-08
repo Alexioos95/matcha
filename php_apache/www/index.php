@@ -1,0 +1,442 @@
+<?php
+	require_once "db.php";
+	require_once "auth.php";
+
+	// Login requirement
+	if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
+	{
+		header("Location: /login.php");
+		exit;
+	}
+	requireCompleteProfile();
+	updateLastOnline($pdo);
+	// Today
+	$today = new DateTime();
+	// Parameters - Filters
+	$filters = [
+		$ageMin = $_GET["ageMin"] ?? null,
+		$ageMax = $_GET["ageMax"] ?? null,
+		$distMin = $_GET["distMin"] ?? null,
+		$distMax = $_GET["distMax"] ?? null,
+		$fameMin = $_GET["fameMin"] ?? null,
+		$fameMax = $_GET["fameMax"] ?? null,
+		$int1 = $_GET["int1"] ?? null,
+		$int2 = $_GET["int2"] ?? null,
+		$int3 = $_GET["int3"] ?? null
+	];
+	foreach ($filters as &$f)
+	{
+		if ($f != null && ((!filter_var($f, FILTER_VALIDATE_INT) || $f < 0)))
+			$f = null;
+	}
+	$filterPhReq = $pdo->prepare("SELECT
+		MIN(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) AS minAge,
+		MAX(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) AS maxAge,
+		MIN(fame) AS minFame,
+		MAX(fame) AS maxFame,
+		MIN(6371 * ACOS(GREATEST(-1, LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(lat)) * COS(RADIANS(lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(lat)))))) AS minDist,
+		MAX(6371 * ACOS(GREATEST(-1, LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(lat)) * COS(RADIANS(lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(lat)))))) AS maxDist
+		FROM profiles p
+		WHERE author <> :userId
+		AND (preference = 'either' OR preference = :myGender)
+		AND (:myPreference = 'either' OR gender = :myPreference)
+		AND NOT EXISTS (
+			SELECT 1
+			FROM blocks b
+			WHERE (b.author = :userId AND b.target = p.author) OR (b.author = p.author AND b.target = :userId)
+		)
+	");
+	$filterPhReq->bindValue(":userId", $_SESSION["user"]["id"], PDO::PARAM_INT);
+	$filterPhReq->bindValue(":myGender", $_SESSION["profile"]["gender"], PDO::PARAM_STR);
+	$filterPhReq->bindValue(":myPreference", $_SESSION["profile"]["preference"], PDO::PARAM_STR);
+	$filterPhReq->bindValue(":myLat", $_SESSION["profile"]["lat"]);
+	$filterPhReq->bindValue(":myLon", $_SESSION["profile"]["lon"]);
+	$filterPhReq->execute();
+	$filterPh = $filterPhReq->fetch(PDO::FETCH_ASSOC);
+	$defaults = [
+		(int)$filterPh["minAge"],
+		(int)$filterPh["maxAge"],
+		(int)$filterPh["minDist"],
+		(int)$filterPh["maxDist"],
+		(int)$filterPh["minFame"],
+		(int)$filterPh["maxFame"] + 1,
+	];
+	for ($i = 0; $i < count($defaults); $i++)
+	{
+		if (!$filters[$i])
+			$filters[$i] = $defaults[$i];
+	}
+	// Parameters - Sort
+	$sort = $_GET["sort"] ?? null;
+	$app = "";
+	if ($sort == "age-asc")
+		$app = "age ASC, distance ASC, tags DESC, p.fame DESC";
+	elseif ($sort == "age-desc")
+ 		$app = "age DESC, distance ASC, tags DESC, p.fame DESC";
+	elseif ($sort == "tags")
+		$app = "tags DESC, distance ASC, p.fame DESC";
+	elseif ($sort == "fame")
+		$app = "p.fame DESC, distance ASC, tags DESC";
+	else
+		$app = "distance ASC, tags DESC, p.fame DESC";
+	// Query
+	$query = "SELECT p.*, u.firstName, u.lastName,
+		TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age,
+		(6371 * ACOS(LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(p.lat)) * COS(RADIANS(p.lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(p.lat))))) AS distance,
+		(
+			SELECT COUNT(*)
+			FROM userInterests myTags
+			INNER JOIN userInterests theirTags ON myTags.interestId = theirTags.interestId
+			WHERE myTags.userId = :userId
+			AND theirTags.userId = u.id
+		) AS tags
+		FROM profiles p
+		INNER JOIN users u ON p.author = u.id
+		WHERE u.id <> :userId AND u.isComplete = TRUE
+		AND (p.preference = 'either' OR p.preference = :myGender)
+		AND (:myPreference = 'either' OR p.gender = :myPreference)
+		AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) BETWEEN :ageMin AND :ageMax
+		AND (6371 * ACOS(LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(p.lat)) * COS(RADIANS(p.lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(p.lat))))) BETWEEN :distMin AND :distMax
+		AND p.fame BETWEEN :fameMin AND :fameMax
+		AND NOT EXISTS (
+			SELECT 1
+			FROM blocks b
+			WHERE (b.author = :userId AND b.target = u.id) OR (b.author = u.id AND b.target = :userId)
+		)
+		ORDER BY ";
+	$query .= $app . " LIMIT 40";
+	$req = $pdo->prepare($query);
+	$req->bindValue(":userId", $_SESSION["user"]["id"], PDO::PARAM_INT);
+	$req->bindValue(":myGender", $_SESSION["profile"]["gender"], PDO::PARAM_STR);
+	$req->bindValue(":myPreference", $_SESSION["profile"]["preference"], PDO::PARAM_STR);
+	$req->bindValue(":myLat", $_SESSION["profile"]["lat"]);
+	$req->bindValue(":myLon", $_SESSION["profile"]["lon"]);
+	$req->bindValue(":ageMin", $filters[0], PDO::PARAM_INT);
+	$req->bindValue(":ageMax", $filters[1], PDO::PARAM_INT);
+	$req->bindValue(":distMin", $filters[2]);
+	$req->bindValue(":distMax", $filters[3]);
+	$req->bindValue(":fameMin", $filters[4], PDO::PARAM_INT);
+	$req->bindValue(":fameMax", $filters[5], PDO::PARAM_INT);
+	$req->execute();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="Match with your soulmate!">
+		<title>Matcha</title>
+		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
+		<script src="https://kit.fontawesome.com/70111f5ad5.js" crossorigin="anonymous"></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="./styles.css">
+	</head>
+	<body class="index-body">
+		<div class="modal hidden"></div>
+		<header>
+			<h1>Matcha</h1>
+			<nav>
+				<ul>
+					<li><a href="/"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></a></li>
+					<?php
+						if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
+						{
+							echo "<li><a href='/connections.php'><i class='fa-solid fa-people-arrows'></i><span>Connections</span></a></li>";
+							echo "<li><a href='/settings.php'><i class='fa-solid fa-gear'></i><span>Settings</span></a></li>";
+							echo "<li><a href='/api/logout.php'><i class='fa-solid fa-right-from-bracket'></i><span>Logout</span></a></li>";
+						}
+						else
+							echo "<li><a href='/login.php'><i class='fa-solid fa-user'></i><span>Login</span></a></li>";
+					?>
+				</ul>
+			</nav>
+		</header>
+		<main>
+			<div class="grid-container">
+				<form method="GET">
+					<div class="filter-container">
+						<div class="filter-wrapper">
+							<div class="filter-range-wrapper">
+								<div class="search-range">
+									<label for="age-slider">Age</label>
+									<div class="drange">
+										<input class="sliders-min" id="age-slider" name="ageMin" type="range" min="<?php echo htmlspecialchars($filterPh['minAge']) ?>" max="<?php echo htmlspecialchars($filterPh['maxAge']) ?>" value="<?php echo htmlspecialchars($filters[0]) ?>">
+										<input class="sliders-max" name="ageMax" type="range" min="<?php echo htmlspecialchars($filterPh['minAge']) ?>" max="<?php echo htmlspecialchars($filterPh['maxAge']) ?>" value="<?php echo htmlspecialchars($filters[1]) ?>">
+										<div class="dmin"><?php echo htmlspecialchars($filters[0]) ?></div>
+										<div class="dmax"><?php echo htmlspecialchars($filters[1]) ?></div>
+									</div>
+								</div>
+								<div class="search-range">
+									<label for="distance-slider">Distance</label>
+									<div class="drange">
+										<input class="sliders-min" id="distance-slider" name="distMin" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?php echo htmlspecialchars($filters[2]) ?>">
+										<input class="sliders-max" name="distMax" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?php echo htmlspecialchars($filters[3]) ?>">
+										<div class="dmin"><?php echo htmlspecialchars((int)$filters[2]) ?></div>
+										<div class="dmax"><?php echo htmlspecialchars((int)$filters[3]) ?></div>
+									</div>
+								</div>
+								<div class="search-range">
+									<label for="fame-slider">Fame</label>
+									<div class="drange">
+										<input class="sliders-min" id="fame-slider" name="fameMin" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?php echo htmlspecialchars($filters[4]) ?>">
+										<input class="sliders-max" name="fameMax" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?php echo htmlspecialchars($filters[5]) ?>">
+										<div class="dmin"><?php echo htmlspecialchars($filters[4]) ?></div>
+										<div class="dmax"><?php echo htmlspecialchars($filters[5]) ?></div>
+									</div>
+								</div>
+							</div>
+							<div class="filter-select-wrapper">
+								<select id="int-1" name="int-1">
+									<option value="">Select an interest</option>
+									<option value=""></option>
+									<option value=""></option>
+								</select>
+								<select id="int-2" name="int-2">
+									<option value="">Select an interest</option>
+									<option value=""></option>
+									<option value=""></option>
+								</select>
+								<select id="int-3" name="int-3">
+									<option value="">Select an interest</option>
+									<option value=""></option>
+									<option value=""></option>
+								</select>
+							</div>
+						</div>
+						<div class="filter-button-wrapper">
+							<button class="reset-search" type="button">Reset filters</button>
+							<button class="submit-search" type="submit">Apply filters</button>
+						</div>
+					</div>
+					<div class="sort-wrapper">
+						<label for="sorting"><i class="fa-solid fa-filter"></i> Sort by:</label>
+						<input class="sort-input" name="sort" type="hidden"></input>
+						<button type="button" id="sorting" class="sort-button interest <?php echo $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
+						<button type="button" class="sort-button interest <?php echo $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide"></i></span></button>
+						<button type="button" class="sort-button interest <?php echo $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short"></i></span></button>
+						<button type="button" class="sort-button interest <?php echo $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
+						<button type="button" class="sort-button interest <?php echo $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
+					</div>
+				</form>
+			<?php while ($row = $req->fetch(PDO::FETCH_ASSOC)): ?>
+				<?php $birthDate = new DateTime($row["birthdate"]); $age = $birthDate->diff($today)->y; ?>
+				<div class="grid-items">
+					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?php echo htmlspecialchars($row['id']); ?>">
+						<span class="overlay top">
+							<span class="label">
+								<i class="fa-solid fa-star label"></i>
+								<?php echo htmlspecialchars(ucfirst($row['fame'])); ?>
+							</span>
+							<span class="label"><?php echo htmlspecialchars((int)$row['distance']) . "km" ?></span>
+						</span>
+						<img src="<?php echo htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?php echo htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) ?>"></img>
+						<span class="overlay bottom"><?php echo htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+					</button>
+				</div>
+			<?php endwhile; ?>
+			</div>
+			<div class="load-trigger"></div>
+		</main>
+		<footer>
+			<p>Matcha by apayen@student.42.fr</p>
+		</footer>
+		<script>
+			// Advanced search
+			const submitSearch = document.getElementsByClassName("submit-search")[0];
+			const sortInput = document.getElementsByClassName("sort-input")[0];
+			const slidersMin = document.getElementsByClassName("sliders-min");
+			const slidersMax = document.getElementsByClassName("sliders-max");
+			const dmin = document.getElementsByClassName("dmin");
+			const dmax = document.getElementsByClassName("dmax");
+			for (let i = 0; i < slidersMin.length; i++)
+			{
+				slidersMin[i].addEventListener("input", () => {
+					if (parseInt(slidersMin[i].value, 10) > parseInt(slidersMax[i].value, 10))
+						slidersMin[i].value = slidersMax[i].value;
+					dmin[i].innerHTML = slidersMin[i].value;
+				});
+				slidersMax[i].addEventListener("input", () => {
+					if (parseInt(slidersMax[i].value, 10) < parseInt(slidersMin[i].value, 10))
+						slidersMax[i].value = slidersMin[i].value;
+					dmax[i].innerHTML = slidersMax[i].value;
+				});
+			}
+			const sortButtons = document.getElementsByClassName("sort-button");
+			for (let i = 0; i < sortButtons.length; i++)
+			{
+				sortButtons[i].addEventListener("click", () => {
+					for (let j = 0; j < sortButtons.length; j++)
+					{
+						sortButtons[j].classList.remove("selected");
+					}
+					sortButtons[i].classList.add("selected");
+					sortInput.value = sortButtons[i].dataset.value;
+					submitSearch.click();
+				});
+				if (sortButtons[i].classList.contains("selected"))
+					sortInput.value = sortButtons[i].dataset.value;
+			}
+			const resetButton = document.getElementsByClassName("reset-search")[0];
+			resetButton.addEventListener("click", () => {
+				slidersMin[0].value = <?php echo $defaults[0] ?>;
+				slidersMax[0].value = <?php echo $defaults[1] ?>;
+				slidersMin[1].value = <?php echo $defaults[2] ?>;
+				slidersMax[1].value = <?php echo $defaults[3] ?>;
+				slidersMin[2].value = <?php echo $defaults[4] ?>;
+				slidersMax[2].value = <?php echo $defaults[5] ?>;
+				submitSearch.click();
+			});
+			// Modal for profile
+			function openmodal(b)
+			{
+				modal.classList.remove("hidden");
+				fetch(`/api/profile.php?id=${b.dataset.id}`)
+					.then(res => res.text())
+					.then(data => {
+						// Set HTML
+						modal.innerHTML = data;
+						// Carousel handlers
+						const carousel = document.getElementsByClassName("modal-carousel")[0];
+						const carouselButtons = document.getElementsByClassName("carousel-button");
+						if (carousel && carouselButtons)
+						{
+							carouselButtons[0].addEventListener("click", () => {
+								carousel.scrollBy({
+									left: -carousel.clientWidth,
+									behavior: "smooth"
+								});
+							});
+							carouselButtons[1].addEventListener("click", () => {
+								carousel.scrollBy({
+									left: carousel.clientWidth,
+									behavior: "smooth"
+								});
+							});
+						}
+						// Buttons
+						const modalActions = document.querySelectorAll(".modal-profile .modal-footer button");
+						if (modalActions && modalActions[0] && modalActions[1] && modalActions[2])
+						{
+							modalActions[0].addEventListener("click", () => {
+								fetch("/api/block.php", {
+									method: "POST",
+									headers: {"Content-Type": "application/json"},
+									body: JSON.stringify({
+										csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+										id: b.dataset.id
+									})
+								});
+								modal.classList.add("hidden");
+								modal.innerHTML = "";
+								b.parentElement.remove();
+							});
+							modalActions[1].addEventListener("click", () => {
+								fetch("/api/like.php", {
+									method: "POST",
+									headers: {"Content-Type": "application/json"},
+									body: JSON.stringify({
+										csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+										id: b.dataset.id
+									})
+								})
+									.then(res => res.json())
+									.then(data => {
+										if (!data.error)
+										{
+											if (data.status == "none")
+											{
+												modalActions[1].innerHTML = `
+												<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="64.000000pt" height="64.000000pt" viewBox="0 0 64.000000 64.000000" preserveAspectRatio="xMidYMid meet">
+													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="white" stroke="none">
+														<path d="M91 593 c-48 -24 -84 -83 -89 -148 -8 -96 60 -207 209 -340 95 -85 104 -90 131 -73 38 25 161 139 201 188 89 106 117 212 77 294 -26 55 -67 86 -120 93 -61 8 -106 -5 -146 -42 l-36 -35 -19 24 c-42 53 -141 72 -208 39z"/>
+													</g>
+												</svg>`;
+											}
+											if (data.status == "liked")
+											{
+												modalActions[1].innerHTML = `
+												<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="64.000000pt" height="64.000000pt" viewBox="0 0 64.000000 64.000000" preserveAspectRatio="xMidYMid meet">
+													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="white" stroke="none">
+														<path d="M91 593 c-18 -9 -45 -35 -60 -57 -22 -33 -26 -51 -26 -105 1 -104 54 -188 200 -320 101 -91 110 -97 137 -78 40 26 150 128 196 181 59 68 102 159 102 215 0 56 -32 124 -71 152 -63 44 -158 37 -215 -16 l-36 -35 -19 24 c-42 53 -141 72 -208 39z m455 -64 c33 -31 48 -89 35 -137 -20 -71 -125 -208 -204 -264 l-28 -20 3 190 c3 187 3 191 28 217 14 15 34 31 45 36 32 14 95 3 121 -22z"/>
+													</g>
+												</svg>`;
+											}
+											if (data.status == "likes")
+											{
+												modalActions[1].innerHTML = `
+												<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="64.000000pt" height="64.000000pt" viewBox="0 0 64.000000 64.000000" preserveAspectRatio="xMidYMid meet">
+													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="rgb(214, 46, 46)" stroke="none">
+														<path d="M91 593 c-48 -24 -84 -83 -89 -148 -8 -96 60 -207 209 -340 95 -85 104 -90 131 -73 38 25 161 139 201 188 89 106 117 212 77 294 -26 55 -67 86 -120 93 -61 8 -106 -5 -146 -42 l-36 -35 -19 24 c-42 53 -141 72 -208 39z m163 -72 l31 -31 3 -191 3 -191 -30 21 c-48 35 -145 146 -176 203 -49 90 -35 178 36 216 38 20 97 8 133 -27z"/>
+													</g>
+												</svg>`;
+											}
+											if (data.status == "matched")
+											{
+												modalActions[1].innerHTML = `
+												<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="64.000000pt" height="64.000000pt" viewBox="0 0 64.000000 64.000000" preserveAspectRatio="xMidYMid meet">
+													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="rgb(214, 46, 46)" stroke="none">
+														<path d="M91 593 c-48 -24 -84 -83 -89 -148 -8 -96 60 -207 209 -340 95 -85 104 -90 131 -73 38 25 161 139 201 188 89 106 117 212 77 294 -26 55 -67 86 -120 93 -61 8 -106 -5 -146 -42 l-36 -35 -19 24 c-42 53 -141 72 -208 39z"/>
+													</g>
+												</svg>`;
+											}
+										}
+									});
+							});
+							modalActions[2].addEventListener("click", () => {
+								if (confirm("You are about to report this user. Proceed?"))
+								{
+									fetch("/api/report.php", {
+										method: "POST",
+										headers: {"Content-Type": "application/json"},
+										body: JSON.stringify({
+											csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+											id: b.dataset.id
+										})
+									});
+									modalActions[2].disabled = true;
+								}
+							});
+						}
+					})
+			}
+			const modal = document.getElementsByClassName("modal")[0];
+			modal.addEventListener("click", (e) => {
+				if (e.target === modal)
+					modal.classList.add("hidden");
+			});
+			// Infinite scrolling
+			let loading = false;
+			const container = document.getElementsByClassName("grid-container")[0];
+			const trigger = document.getElementsByClassName("load-trigger")[0];
+			const observer = new IntersectionObserver(entries => {
+				if (entries[0].isIntersecting && !loading)
+				{
+					loading = true;
+					const cards = document.getElementsByClassName("modal-button");
+					if (cards && cards.length > 0)
+					{
+						fetch("/api/load_more.php?type=index&ageMin=<?php echo $filters[0] ?>&ageMax=<?php echo $filters[1] ?>&distMin=<?php echo $filters[2] ?>&distMax=<?php echo $filters[3] ?>&fameMin=<?php echo $filters[4] ?>&fameMax=<?php echo $filters[5] ?>&int-1=<?php echo $filters[6] ?>&int-2=<?php echo $filters[7] ?>&int-3=<?php echo $filters[8] ?>&sort=<?php echo $sort ?>&offset=" + cards.length)
+							.then(res => res.text())
+							.then(data => {
+								if (data.trim() === "")
+								{
+									observer.disconnect();
+									return;
+								}
+								container.insertAdjacentHTML("beforeend", data);
+								loading = false;
+							})
+							.catch(() => loading = false);
+					}
+					else
+						loading = false;
+				}
+			}, {});
+			observer.observe(trigger);
+		</script>
+	</body>
+</html>

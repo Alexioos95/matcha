@@ -1,0 +1,43 @@
+services:
+    php_apache:
+        container_name: php_apache
+        build:
+            context: ./php_apache
+            dockerfile: Dockerfile
+        ports:
+            - "8080:80"
+            - "8443:443"
+        env_file:
+            - .env
+        volumes:
+            - ./php_apache/www:/var/www/html
+        depends_on:
+            - mysql
+
+    php_mail:
+        container_name: php_mail
+        build:
+            context: ./php_mail
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        depends_on:
+             - mysql
+        restart: always
+
+    mysql:
+        container_name: mysql
+        build:
+            context: ./mysql
+            dockerfile: Dockerfile
+        restart: always
+        ports:
+            - "3306:3306"
+        env_file:
+            - .env
+        volumes:
+            - mysql_db:/var/lib/mysql
+
+volumes:
+#     apache_www:
+    mysql_db:

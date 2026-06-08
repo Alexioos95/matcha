@@ -1,0 +1,7 @@
+DUMP=localhost
+MYSQL_ROOT_PASSWORD=password
+MYSQL_DATABASE=database_name
+MYSQL_USER=database_user
+MYSQL_PASSWORD=database_password
+GMAIL_SENDER=email_sender@gmail.com
+GMAIL_APP_PASSWORD="api key from gmail"
