@@ -66,6 +66,11 @@
 		if (!$filters[$i])
 			$filters[$i] = $defaults[$i];
 	}
+	for ($i = 6; $i < count($filters); $i++)
+	{
+		if ($filters[$i] < 1)
+			$filters[$i] = null;
+	}
 	// Parameters - Sort
 	$sort = $_GET["sort"] ?? null;
 	$app = "";
@@ -103,8 +108,18 @@
 			FROM blocks b
 			WHERE (b.author = :userId AND b.target = u.id) OR (b.author = u.id AND b.target = :userId)
 		)
-		ORDER BY ";
-	$query .= $app . " LIMIT 40";
+	";
+	if ($filters[6])
+	{
+		$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId1) ";
+		if ($filters[7])
+		{
+			$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId2) ";
+			if ($filters[8])
+				$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId3) ";
+		}
+	}
+	$query .= "ORDER BY " . $app . " LIMIT 40";
 	$req = $pdo->prepare($query);
 	$req->bindValue(":userId", $_SESSION["user"]["id"], PDO::PARAM_INT);
 	$req->bindValue(":myGender", $_SESSION["profile"]["gender"], PDO::PARAM_STR);
@@ -117,7 +132,20 @@
 	$req->bindValue(":distMax", $filters[3]);
 	$req->bindValue(":fameMin", $filters[4], PDO::PARAM_INT);
 	$req->bindValue(":fameMax", $filters[5], PDO::PARAM_INT);
+	if ($filters[6])
+	{
+		$req->bindValue(":interestId1", $filters[6], PDO::PARAM_INT);
+		if ($filters[7])
+		{
+			$req->bindValue(":interestId2", $filters[7], PDO::PARAM_INT);
+			if ($filters[8])
+				$req->bindValue(":interestId3", $filters[8], PDO::PARAM_INT);
+		}
+	}
 	$req->execute();
+	$intReq = $pdo->prepare("SELECT * from interests");
+	$intReq->execute();
+	$ints = $intReq->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -190,20 +218,23 @@
 								</div>
 							</div>
 							<div class="filter-select-wrapper">
-								<select id="int-1" name="int-1">
+								<select class="filter-select" name="int1">
 									<option value="">Select an interest</option>
-									<option value=""></option>
-									<option value=""></option>
+									<?php foreach ($ints as $int): ?>
+									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[6] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<?php endforeach; ?>
 								</select>
-								<select id="int-2" name="int-2">
+								<select class="filter-select hidden" name="int2">
 									<option value="">Select an interest</option>
-									<option value=""></option>
-									<option value=""></option>
+									<?php foreach ($ints as $int): ?>
+									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[7] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<?php endforeach; ?>
 								</select>
-								<select id="int-3" name="int-3">
+								<select class="filter-select hidden" name="int3">
 									<option value="">Select an interest</option>
-									<option value=""></option>
-									<option value=""></option>
+									<?php foreach ($ints as $int): ?>
+									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[8] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<?php endforeach; ?>
 								</select>
 							</div>
 						</div>
@@ -248,6 +279,7 @@
 			// Advanced search
 			const submitSearch = document.getElementsByClassName("submit-search")[0];
 			const sortInput = document.getElementsByClassName("sort-input")[0];
+			// Advanced search - Sliders
 			const slidersMin = document.getElementsByClassName("sliders-min");
 			const slidersMax = document.getElementsByClassName("sliders-max");
 			const dmin = document.getElementsByClassName("dmin");
@@ -280,6 +312,52 @@
 				if (sortButtons[i].classList.contains("selected"))
 					sortInput.value = sortButtons[i].dataset.value;
 			}
+			// Advanced search - Interests
+			const selects = document.getElementsByClassName("filter-select");
+			if (selects[0].value != "")
+				selects[1].classList.remove("hidden");
+			if (selects[1].value != "")
+				selects[2].classList.remove("hidden");
+			selects[0].addEventListener("change", () => {
+				if (selects[0].value != "")
+					selects[1].classList.remove("hidden");
+				else
+				{
+					selects[1].classList.add("hidden");
+					selects[1].value = "";
+					selects[2].classList.add("hidden");
+					selects[2].value = "";
+				}
+			});
+			selects[1].addEventListener("change", () => {
+				if (selects[1].value != "")
+					selects[2].classList.remove("hidden");
+				else
+				{
+					selects[2].classList.add("hidden");
+					selects[2].value = "";
+				}
+			});
+			function updateOptions()
+			{
+				Array.from(selects).forEach(el => {
+					[...el.options].forEach(option => {
+						option.disabled = false;
+					});
+				});
+				const val = [...selects].map(el => el.value).filter(val => val !== "");
+				Array.from(selects).forEach(el => {
+					[...el.options].forEach(option => {
+						if (option.value !== '' && val.includes(option.value) && option.value !== el.value)
+							option.disabled = true;
+					});
+				});
+			}
+			Array.from(selects).forEach(select => {
+				select.addEventListener("change", updateOptions);
+			});
+			updateOptions();
+			// Advanced search - Reset
 			const resetButton = document.getElementsByClassName("reset-search")[0];
 			resetButton.addEventListener("click", () => {
 				slidersMin[0].value = <?php echo $defaults[0] ?>;
@@ -288,6 +366,9 @@
 				slidersMax[1].value = <?php echo $defaults[3] ?>;
 				slidersMin[2].value = <?php echo $defaults[4] ?>;
 				slidersMax[2].value = <?php echo $defaults[5] ?>;
+				selects[0].value = "";
+				selects[1].value = "";
+				selects[2].value = "";
 				submitSearch.click();
 			});
 			// Modal for profile
@@ -419,7 +500,7 @@
 					const cards = document.getElementsByClassName("modal-button");
 					if (cards && cards.length > 0)
 					{
-						fetch("/api/load_more.php?type=index&ageMin=<?php echo $filters[0] ?>&ageMax=<?php echo $filters[1] ?>&distMin=<?php echo $filters[2] ?>&distMax=<?php echo $filters[3] ?>&fameMin=<?php echo $filters[4] ?>&fameMax=<?php echo $filters[5] ?>&int-1=<?php echo $filters[6] ?>&int-2=<?php echo $filters[7] ?>&int-3=<?php echo $filters[8] ?>&sort=<?php echo $sort ?>&offset=" + cards.length)
+						fetch("/api/load_more.php?type=index&ageMin=<?php echo $filters[0] ?>&ageMax=<?php echo $filters[1] ?>&distMin=<?php echo $filters[2] ?>&distMax=<?php echo $filters[3] ?>&fameMin=<?php echo $filters[4] ?>&fameMax=<?php echo $filters[5] ?>&int1=<?php echo $filters[6] ?>&int2=<?php echo $filters[7] ?>&int3=<?php echo $filters[8] ?>&sort=<?php echo $sort ?>&offset=" + cards.length)
 							.then(res => res.text())
 							.then(data => {
 								if (data.trim() === "")

@@ -56,12 +56,17 @@
 			(int)$filterPh["minDist"],
 			(int)$filterPh["maxDist"],
 			(int)$filterPh["minFame"],
-			(int)$filterPh["maxFame"],
+			(int)$filterPh["maxFame"] + 1,
 		];
 		for ($i = 0; $i < count($defaults); $i++)
 		{
 			if (!$filters[$i])
 				$filters[$i] = $defaults[$i];
+		}
+		for ($i = 6; $i < count($filters); $i++)
+		{
+			if ($filters[$i] < 1)
+				$filters[$i] = null;
 		}
 		// Parameters - Sort
 		$sort = $_GET["sort"] ?? null;
@@ -100,8 +105,18 @@
 				FROM blocks b
 				WHERE (b.author = :userId AND b.target = u.id) OR (b.author = u.id AND b.target = :userId)
 			)
-			ORDER BY ";
-		$query .= $app . " LIMIT 40 OFFSET :offset";
+		";
+		if ($filters[6])
+		{
+			$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId1) ";
+			if ($filters[7])
+			{
+				$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId2) ";
+				if ($filters[8])
+					$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId3) ";
+			}
+		}
+		$query .= "ORDER BY " . $app . " LIMIT 40 OFFSET :offset";
 		$req = $pdo->prepare($query);
 	}
 	elseif ($type == "matches")
@@ -168,6 +183,16 @@
 		$req->bindValue(":distMax", $filters[3]);
 		$req->bindValue(":fameMin", $filters[4], PDO::PARAM_INT);
 		$req->bindValue(":fameMax", $filters[5], PDO::PARAM_INT);
+		if ($filters[6])
+		{
+			$req->bindValue(":interestId1", $filters[6], PDO::PARAM_INT);
+			if ($filters[7])
+			{
+				$req->bindValue(":interestId2", $filters[7], PDO::PARAM_INT);
+				if ($filters[8])
+					$req->bindValue(":interestId3", $filters[8], PDO::PARAM_INT);
+			}
+		}
 	}
 	$req->bindValue(":offset", $offset, PDO::PARAM_INT);
 	$req->execute();
