@@ -1,12 +1,8 @@
 <?php
-	require_once "../db.php";
-	require_once "../auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /");
-		exit;
-	}
+	requireNotLogged();
 	$code = $_GET["code"] ?? NULL;
 	$email = $_GET["email"] ?? NULL;
 

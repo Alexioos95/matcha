@@ -1,32 +1,9 @@
 <?php
-	require_once "db.php";
-	require_once "auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	function isCommonPassword($password)
-	{
-		$hash = strtoupper(sha1($password));
-		$prefix = substr($hash, 0, 5);
-		$suffix = substr($hash, 5);
-		$url = "https://api.pwnedpasswords.com/range/" . $prefix;
-		$res = file_get_contents($url);
-		if ($res == false)
-			return (false);
-		foreach (explode("\n", $res) as $line)
-		{
-			list($hashSuffix, $count) = explode(':', trim($line));
-			if ($hashSuffix === $suffix)
-				return (true);
-		}
-		return (false);
-	}
-
-	if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /");
-		exit;
-	}
-	if (empty($_SESSION["csrfToken"]))
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+	requireNotLogged();
+	generateCsrfToken();
 	$username = "";
 	$email = "";
 	$firstName = "";
@@ -35,8 +12,7 @@
 		$_SESSION["pleaseVerify"] = false;
 	if (isset($_POST["submit"]))
 	{
-		if (!isset($_POST["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
-			exit("Invalid CSRF token");
+		verifyCsrfToken();
 		$username = trim($_POST["username"]);
 		$email = trim($_POST["email"]);
 		$firstName = trim($_POST["firstName"]);
@@ -62,7 +38,7 @@
 			{
 				$email = "";
 				$username = "";
-				$_SESSION["error"] = "Username or email not available.";
+				$_SESSION["error"] = "Username or email is not available.";
 			}
 			else
 			{
@@ -85,7 +61,7 @@
 				";
 				$mailReq = $pdo->prepare("INSERT INTO mailQueue (email, subject, body) VALUES (?, ?, ?)");
 				$mailReq->execute([$email, "Matcha - Activate your account", $emailBody]);
-				$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+				regenerateCsrfToken();
 				$_SESSION["pleaseVerify"] = true;
 				header("Location: /register.php");
 				exit;
@@ -96,45 +72,33 @@
 
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Match with your soulmate!">
-		<title>Matcha - register</title>
-		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-		<link rel="stylesheet" type="text/css" href="./styles.css">
-	</head>
-	<body class="login-body">
+	<?php $title = "- Register"; require_once "/usr/local/bin/includes/head.php" ?>
+	<body class="login">
 		<?php if (!$_SESSION["pleaseVerify"]): ?>
-			<div class="login-container">
-				<h1>Register</h1>
-				<form action="register.php" method="POST" autocomplete="off">
-					<input type="hidden" name="csrfToken" value="<?php echo $_SESSION['csrfToken']; ?>">
-					<input type="text" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-email" autocorrect="off" autocapitalize="off" aria-label="Email" required>
-					<input type="text" name="username" placeholder="Username" value="<?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" autocorrect="off" autocapitalize="off" aria-label="Username" required>
-					<input type="text" name="firstName" placeholder="First name" value="<?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-firstName" autocorrect="off" autocapitalize="off" aria-label="first name" required>
-					<input type="text" name="lastName" placeholder="Last name" value="<?php echo htmlspecialchars($lastName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-lastName" autocorrect="off" autocapitalize="off" aria-label="last name" required>
-					<input type="password" name="password" placeholder="Password" autocomplete="new-password" aria-label="Password" required>
-					<input type="password" name="confirm" placeholder="Confirm password" autocomplete="new-password" aria-label="Confirm password" required>
-					<div class="error-wrapper">
-						<p class="error">
-							<?php 
-								echo isset($_SESSION["error"]) ? $_SESSION["error"] : " "; 
-								unset($_SESSION["error"]);
-							?>
-						</p>
-						<button type="submit" name="submit">Submit</button>
-					</div>
-				</form>
-				<p>Already have an account? <a href="login.php">Login</a></p>
-			</div>
+		<main class="login-card">
+			<h1>Register</h1>
+			<form action="register.php" method="POST" autocomplete="off">
+				<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
+				<input type="text" name="email" placeholder="Email" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="email" autocorrect="off" autocapitalize="off" aria-label="Email" required>
+				<input type="text" name="username" placeholder="Username" value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="username" autocorrect="off" autocapitalize="off" aria-label="Username" required>
+				<input type="text" name="firstName" placeholder="First name" value="<?= htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="given-name" autocorrect="off" autocapitalize="off" aria-label="first name" required>
+				<input type="text" name="lastName" placeholder="Last name" value="<?= htmlspecialchars($lastName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="family-name" autocorrect="off" autocapitalize="off" aria-label="last name" required>
+				<input type="password" name="password" placeholder="Password" autocomplete="new-password" aria-label="Password" required>
+				<input type="password" name="confirm" placeholder="Confirm password" autocomplete="new-password" aria-label="Confirm password" required>
+				<?php if (isset($_SESSION["error"])): ?>
+				<div class="error-wrapper">
+					<p class="log error">
+						<?= isset($_SESSION["error"]) ? $_SESSION["error"] : " "; unset($_SESSION["error"]); ?>
+					</p>
+				</div>
+				<?php endif; ?>
+				<button type="submit" name="submit">Submit</button>
+			</form>
+			<p>Already have an account? <a href="login.php">Login</a></p>
+		</main>
 		<?php else: ?>
-			<p>Please check your mails to activate your account.</p>
-			<?php unset($_SESSION["pleaseVerify"]); ?>
+		<p>Please check your mails to activate your account.</p>
+		<?php unset($_SESSION["pleaseVerify"]); ?>
 		<?php endif; ?>
 	</body>
 </html>

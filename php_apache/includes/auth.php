@@ -16,10 +16,10 @@
 			$profileReq->execute([$user["id"]]);
 			$profile = $profileReq->fetch(PDO::FETCH_ASSOC);
 			$_SESSION["profile"] = $profile;
-			$intReq = $pdo->prepare("SELECT * FROM userInterests WHERE userId = ?");
+			$intReq = $pdo->prepare("SELECT * FROM userInterests WHERE user = ?");
 			$intReq->execute([$_SESSION["user"]["id"]]);
 			$int = $intReq->fetchAll(PDO::FETCH_ASSOC);
-			$_SESSION["profile"]["interests"] = array_column($int, "interestId");
+			$_SESSION["profile"]["interests"] = array_column($int, "interest");
 			$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
 			$newToken = bin2hex(random_bytes(64));
 			$newHashedToken = hash("sha256", $newToken);
@@ -33,13 +33,42 @@
 			setcookie("rememberMe", $newToken, ["expires" => $newTime, "path" => "/", "httponly" => true, "secure" => true, "samesite" => "Lax" ]);
 		}
 	}
-	
-	function requireCompleteProfile()
+	function requireLogin()
 	{
-		if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]) && isset($_SESSION["user"]["isComplete"]) && !$_SESSION["user"]["isComplete"])
+		if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
+		{
+			header("Location: /login.php");
+			exit;
+		}
+	}
+	function requireNotLogged()
+	{
+		if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
+		{
+			header("Location: /");
+			exit;
+		}
+	}
+	function requireProfile()
+	{
+		if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]) && !$_SESSION["user"]["isComplete"])
 		{
 			header("Location: /set_profile.php");
 			exit;
 		}
+	}
+	function generateCsrfToken()
+	{
+		if (empty($_SESSION["csrfToken"]))
+			$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+	}
+	function verifyCsrfToken()
+	{
+		if (!isset($_SESSION["csrfToken"]) || !isset($_POST["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
+			exit("Invalid CSRF token");
+	}
+	function regenerateCsrfToken()
+	{
+		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
 	}
 ?>

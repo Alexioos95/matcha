@@ -1,24 +1,17 @@
 <?php
-	require_once "db.php";
-	require_once "auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]) && isset($_SESSION["profile"]))
+	if (isset($_SESSION["profile"]))
 	{
 		header("Location: /");
 		exit;
 	}
-	elseif (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /login.php");
-		exit;
-	}
-	if (empty($_SESSION["csrfToken"]))
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+	requireLogin();
+	generateCsrfToken();
 	if (isset($_POST["submit"]))
 	{
-		if (!isset($_POST["csrfToken"]) || !isset($_SESSION["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
-			exit("Invalid CSRF token.");
-
+		verifyCsrfToken();
 		$gender = $_POST["gender"];
 		$preference = $_POST["preference"];
 		$day = (int)$_POST["birth-day"];
@@ -82,48 +75,25 @@
 			$res = curl_exec($ch);
 			if ($res === false)
 			{
-				echo json_encode(["error" => curl_error($ch)]);
+				$_SESSION["error"] = "Sorry, we couldn't identify your location. Try again later or contact the administrator.";
+				header("Location: /set_profile.php");
 				exit;
 			}
 			curl_close($ch);
 			$output = json_decode($res, true);
 			if (empty($output))
 			{
-				$_SESSION["error"] = "Sorry, we couldn't identify your location.";
+				$_SESSION["error"] = "Sorry, we couldn't identify your location. Try again later or contact the administrator.";
+				header("Location: /set_profile.php");
 				exit;
 			}
 			$lat = $output[0]["lat"];
 			$lon = $output[0]["lon"];
 			// Pictures
-			function saveImage($file, $dir, $pdo, $userId, &$pictures)
-			{
-				$filename = $file["name"];
-				$tempname = $file["tmp_name"];
-				$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-				$finfo = finfo_open(FILEINFO_MIME_TYPE);
-				$mime = finfo_file($finfo, $tempname);
-				finfo_close($finfo);
-
-				if (($extension != "jpg" && $extension != "jpeg" && $extension != "png") || ($mime != "image/jpeg" && $mime != "image/png"))
-					return (false);
-				if ($extension === "png")
-					$image = imagecreatefrompng($tempname);
-				else
-					$image = imagecreatefromjpeg($tempname);
-				if (!$image)
-					return (false);
-				$path = $dir . "/" . uniqid() . "." . $extension;
-				if (($extension === "png" && !imagepng($image, __DIR__ . $path)) || (($extension === "jpg" || $extension === "jpeg") && !imagejpeg($image, __DIR__ . $path)))
-					return (false);
-				imagedestroy($image);
-				$pictures[] = $path;
-				return (true);
-			}
-
 			$dir = "/uploads/" . $_SESSION["user"]["id"];
 			if (!is_dir(__DIR__ . $dir))
 				mkdir(__DIR__ . $dir, 0774, true);
-			if (!saveImage($_FILES["picture-primary"], $dir, $pdo, $_SESSION["user"]["id"], $pictures))
+			if (!saveImage($_FILES["picture-primary"], __DIR__, $dir, $pdo, $pictures))
 				$_SESSION["error"] = "An error occured with file uploading. Please try again later.";
 			else
 			{
@@ -141,18 +111,20 @@
 						"size" => $_FILES["picture-secondary"]["size"][$key],
 						"type" => $_FILES["picture-secondary"]["type"][$key]
 					];
-					saveImage($file, $dir, $pdo, $_SESSION["user"]["id"], $pictures);
+					saveImage($file, __DIR__, $dir, $pdo, $pictures);
 					$saved++;
 				}
 				for (; $saved < 5; $saved++)
 				{
 					$pictures[] = NULL;
 				}
-				foreach ($interests as $interestId)
+				// Interests
+				foreach ($interests as $interest)
 				{
-					$req = $pdo->prepare("INSERT INTO userInterests (userId, interestId) VALUES (?, ?)");
-					$req->execute([$_SESSION["user"]["id"], $interestId]);
+					$req = $pdo->prepare("INSERT INTO userInterests (user, interest) VALUES (?, ?)");
+					$req->execute([$_SESSION["user"]["id"], $interest]);
 				}
+				// Insert
    				$date = sprintf('%04d-%02d-%02d', $year, $month, $day);
 				$req = $pdo->prepare("INSERT INTO profiles
 					(author, gender, preference, birthdate, bio, city, country, lat, lon, primaryPicture, secondaryPictureOne, secondaryPictureTwo, secondaryPictureThree, secondaryPictureFour)
@@ -175,58 +147,42 @@
 				$req = $pdo->prepare("UPDATE users SET isComplete = 1 WHERE id = ?");
 				$req->execute([$_SESSION["user"]["id"]]);
 				$_SESSION["user"]["isComplete"] = true;
+				regenerateCsrfToken();
 				header("Location: /");
 				exit;
 			}
 		}
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+		regenerateCsrfToken();
+		header("Location: /set_profile.php");
+		exit;
 	}
 	$req = $pdo->prepare("SELECT * from interests");
 	$req->execute();
 	$months = [
-		1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 5 => 'May', 6 => 'June',
-		7 => 'July', 8 => 'August', 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+		1 => "January", 2 => "February", 3 => "March", 4 => "April", 5 => "May", 6 => "June",
+		7 => "July", 8 => "August", 9 => "September", 10 => "October", 11 => "November", 12 => "December"
 	];
 	$currYear = date("Y");
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Match with your soulmate!">
-		<title>Matcha - Complete your profile</title>
-		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-		<script src="https://kit.fontawesome.com/70111f5ad5.js" crossorigin="anonymous"></script>
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-		<link rel="stylesheet" type="text/css" href="./styles.css">
-	</head>
-	<body class="index-body">
-		<header>
-			<h1>Matcha</h1>
-			<nav>
-				<ul>
-					<li><a href='/api/logout.php'><i class='fa-solid fa-right-from-bracket'></i><span>Logout</span></a></li>
-				</ul>
-			</nav>
-		</header>
+	<?php $title = " - Complete your profile"; require_once "/usr/local/bin/includes/head.php"; ?>
+	<body class="index">
+		<?php require_once "/usr/local/bin/includes/header.php" ?>
 		<main>
 			<div class="settings">
+				<?php if (isset($_SESSION["error"])): ?>
 				<div class="error-wrapper">
-					<p class="error">
-						<?php 
-							echo isset($_SESSION["error"]) ? $_SESSION["error"] : " "; 
-							unset($_SESSION["error"]);
-						?>
+					<p class="log error">
+						<?= isset($_SESSION["error"]) ? $_SESSION["error"] : " "; unset($_SESSION["error"]); ?>
 					</p>
+				</div>
+				<?php endif; ?>
 				<div>
 					<h2>Create your profile</h2>
 					<form action="set_profile.php" method="POST" autocomplete="off" enctype="multipart/form-data">
-						<input type="hidden" name="csrfToken" value="<?php echo $_SESSION['csrfToken']; ?>">
+						<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
 						<div class="form-group">
 							<label for="gender">Gender</label>
 							<select id="gender" name="gender" required>
@@ -250,19 +206,19 @@
 								<select name="birth-day" id="birth-day" required>
 									<option value="">Day</option>
 									<?php for ($d = 1; $d <= 31; $d++): ?>
-										<option value="<?php echo $d ?>"><?php echo $d ?></option>
+										<option value="<?= $d ?>"><?= $d ?></option>
 									<?php endfor; ?>
 								</select>
 								<select name="birth-month" id="birth-month" required>
 									<option>Month</option>
-									<?php foreach ($months as $num => $name): ?>
-										<option value="<?php echo $num ?>"><?php echo $name ?></option>
+									<?php foreach ($months as $n => $m): ?>
+										<option value="<?= $n ?>"><?= $m ?></option>
 									<?php endforeach; ?>
 								</select>
 								<select name="birth-year" id="birth-year" required>
 									<option value="">Year</option>
-									<?php for ($y = $currYear - 18; $y >= 1900; $y--): ?>
-										<option value="<?php echo $y ?>"><?php echo $y ?></option>
+									<?php for ($y = $currYear - 18; $y >= ($currYear - 120); $y--): ?>
+										<option value="<?= $y ?>"><?= $y ?></option>
 									<?php endfor; ?>
 								</select>
 							</div>
@@ -272,8 +228,8 @@
 							<input type="text" id="location-city" name="location-city" placeholder="City" required>
 							<input type="text" id="location-country" name="location-country" placeholder="Country" required>
 							<i class="fa-solid fa-spinner loader hidden"></i>
-							<button class="geo-button" type="button"><i class="fa-solid fa-location-arrow"></i> Geolocate me!</button>
-							<p class="error error-geo"></p>
+							<button class="geo-button" type="button" title="Let us input your location through a geolocation with the GPS of your device."><i class="fa-solid fa-location-arrow"></i> Use my current location</button>
+							<p class="log error error-geo"></p>
 						</div>
 						<div class="form-group">
 							<p>Profile picture</p>
@@ -303,8 +259,8 @@
 							<p>Interests</p>
 							<div class="interests-wrapper">
 							<?php while ($row = $req->fetch(PDO::FETCH_ASSOC)): ?>
-								<button type="button" class="interest" data-interest-id="<?php echo $row['id']; ?>">
-									<span><?php echo htmlspecialchars($row['name']); ?></span>
+								<button type="button" class="interest" data-interest-id="<?= $row['id']; ?>">
+									<span><?= htmlspecialchars($row['name']); ?></span>
 								</button>
 							<?php endwhile; ?>
 								<input type="hidden" class="interests-selected" name="interests-selected">
@@ -319,9 +275,7 @@
 				</div>
 			</div>
 		</main>
-		<footer>
-			<p>Matcha by apayen@student.42.fr</p>
-		</footer>
+		<?php require_once "/usr/local/bin/includes/footer.php" ?>
 	</body>
 	<script>
 		// Geolocation
@@ -350,10 +304,10 @@
 								method: "POST",
 								headers: {"Content-Type": "application/json"},
 								body: JSON.stringify({
-									csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+									csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 									lat: lat,
 									lon: lon,
-									id: <?php echo $_SESSION["user"]["id"] ?>
+									id: <?= $_SESSION["user"]["id"] ?>
 								})
 							})
 								.then(res => res.json())
@@ -377,12 +331,11 @@
 			}
 		}
 		const geoButton = document.getElementsByClassName("geo-button")[0];
-		geoButton.addEventListener("click", () => { geolocation(); });
+		geoButton.addEventListener("click", geolocation);
 		// Pictures
 		const buttons = document.getElementsByClassName("interest");
 		const hiddenInput = document.getElementsByClassName("interests-selected")[0];
 		let selected = [];
-
 		Array.from(buttons).forEach(button => {
 			button.addEventListener("click", () => {
 				const id = button.dataset.interestId;
@@ -394,16 +347,13 @@
 				hiddenInput.value = JSON.stringify(selected);
 			});
 		});
-
 		const secondary = document.getElementsByClassName("form-group-secondary")[0];
 		const fileInputs = document.getElementsByClassName("picture-input");
 		const uploadButtons = document.getElementsByClassName("picture-upload");
 		const previews = document.getElementsByClassName("picture-item");
 		for (let i = 0; i < 5; i++)
 		{
-			uploadButtons[i].addEventListener("click", () => {
-				fileInputs[i].click();
-			});
+			uploadButtons[i].addEventListener("click", () => { fileInputs[i].click(); });
 			fileInputs[i].addEventListener("change", function () {
 				const file = this.files[0];
 				if (!file)

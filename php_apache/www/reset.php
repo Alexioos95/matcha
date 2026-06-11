@@ -1,20 +1,14 @@
 <?php
-	require_once "db.php";
-	require_once "auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
 	$email = "";
 	
-	if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /");
-		exit;
-	}
-	if (empty($_SESSION["csrfToken"]))
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+	requireNotLogged();
+	generateCsrfToken();
 	if (isset($_POST["submit"]))
 	{
-		if (!isset($_POST["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
-			exit("Invalid CSRF token");
+		verifyCsrfToken();
 		$email = trim($_POST["email"]);
 		if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 			$_SESSION["error"] = "Invalid email format.";
@@ -57,7 +51,7 @@
 					$_SESSION["success"] = "The email was sent.<br>Check your inbox!";
 				}
 			}
-			$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+			regenerateCsrfToken();
 			header("Location: /reset.php");
 			exit;
 		}
@@ -66,41 +60,26 @@
 
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Match with your soulmate!">
-		<title>Matcha - reset password</title>
-		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-		<link rel="stylesheet" type="text/css" href="./styles.css">
-	</head>
-	<body class="login-body">
-		<div class="login-container">
+	<?php $title = "- Reset your password"; require_once "/usr/local/bin/includes/head.php" ?>
+	<body class="login">
+		<main class="login-card">
 			<h1>Reset password</h1>
 			<form action="reset.php" method="POST" autocomplete="off">
-				<input type="hidden" name="csrfToken" value="<?php echo $_SESSION['csrfToken']; ?>">
-				<input type="text" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" autocapitalize="off" aria-label="Email" required>
+				<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
+				<input type="text" name="email" placeholder="Email" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" autocapitalize="off" autocomplete="email" aria-label="Email" required>
+				<?php if (isset($_SESSION["error"]) || isset($_SESSION["success"])): ?>
 				<div class="error-wrapper">
-					<p class="error">
-						<?php 
-							echo isset($_SESSION["error"]) ? $_SESSION["error"] : " "; 
-							unset($_SESSION["error"]);
-						?>
+					<p class="log error">
+						<?= isset($_SESSION["error"]) ? $_SESSION["error"] : " "; unset($_SESSION["error"]); ?>
 					</p>
-					<button type="submit" name="submit">Submit</button>
-					<p class="success">
-					<?php
-						echo isset($_SESSION["success"]) ? $_SESSION["success"] : " "; 
-						unset($_SESSION["success"]);
-					?>
+					<p class="log success">
+					<?= isset($_SESSION["success"]) ? $_SESSION["success"] : " "; unset($_SESSION["success"]); ?>
 					</p>
 				</div>
+				<?php endif; ?>
+				<button type="submit" name="submit">Submit</button>
 			</form>
 			<p><a href="login.php">Go back</a></p>
-		</div>
+		</main>
 	</body>
 </html>

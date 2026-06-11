@@ -3455,484 +3455,484 @@
 	],
 	"userInterests": [
 		{
-			"userId": 2,
-			"interestId": 2
+			"user": 2,
+			"interest": 2
 		},
 		{
-			"userId": 3,
-			"interestId": 2
+			"user": 3,
+			"interest": 2
 		},
 		{
-			"userId": 4,
-			"interestId": 7
+			"user": 4,
+			"interest": 7
 		},
 		{
-			"userId": 5,
-			"interestId": 10
+			"user": 5,
+			"interest": 10
 		},
 		{
-			"userId": 6,
-			"interestId": 2
+			"user": 6,
+			"interest": 2
 		},
 		{
-			"userId": 7,
-			"interestId": 1
+			"user": 7,
+			"interest": 1
 		},
 		{
-			"userId": 8,
-			"interestId": 15
+			"user": 8,
+			"interest": 15
 		},
 		{
-			"userId": 9,
-			"interestId": 14
+			"user": 9,
+			"interest": 14
 		},
 		{
-			"userId": 10,
-			"interestId": 5
+			"user": 10,
+			"interest": 5
 		},
 		{
-			"userId": 11,
-			"interestId": 3
+			"user": 11,
+			"interest": 3
 		},
 		{
-			"userId": 12,
-			"interestId": 5
+			"user": 12,
+			"interest": 5
 		},
 		{
-			"userId": 13,
-			"interestId": 7
+			"user": 13,
+			"interest": 7
 		},
 		{
-			"userId": 14,
-			"interestId": 1
+			"user": 14,
+			"interest": 1
 		},
 		{
-			"userId": 15,
-			"interestId": 3
+			"user": 15,
+			"interest": 3
 		},
 		{
-			"userId": 16,
-			"interestId": 4
+			"user": 16,
+			"interest": 4
 		},
 		{
-			"userId": 17,
-			"interestId": 9
+			"user": 17,
+			"interest": 9
 		},
 		{
-			"userId": 18,
-			"interestId": 8
+			"user": 18,
+			"interest": 8
 		},
 		{
-			"userId": 19,
-			"interestId": 15
+			"user": 19,
+			"interest": 15
 		},
 		{
-			"userId": 20,
-			"interestId": 2
+			"user": 20,
+			"interest": 2
 		},
 		{
-			"userId": 21,
-			"interestId": 5
+			"user": 21,
+			"interest": 5
 		},
 		{
-			"userId": 22,
-			"interestId": 8
+			"user": 22,
+			"interest": 8
 		},
 		{
-			"userId": 23,
-			"interestId": 8
+			"user": 23,
+			"interest": 8
 		},
 		{
-			"userId": 24,
-			"interestId": 3
+			"user": 24,
+			"interest": 3
 		},
 		{
-			"userId": 25,
-			"interestId": 14
+			"user": 25,
+			"interest": 14
 		},
 		{
-			"userId": 26,
-			"interestId": 5
+			"user": 26,
+			"interest": 5
 		},
 		{
-			"userId": 27,
-			"interestId": 15
+			"user": 27,
+			"interest": 15
 		},
 		{
-			"userId": 28,
-			"interestId": 15
+			"user": 28,
+			"interest": 15
 		},
 		{
-			"userId": 29,
-			"interestId": 2
+			"user": 29,
+			"interest": 2
 		},
 		{
-			"userId": 30,
-			"interestId": 13
+			"user": 30,
+			"interest": 13
 		},
 		{
-			"userId": 31,
-			"interestId": 12
+			"user": 31,
+			"interest": 12
 		},
 		{
-			"userId": 32,
-			"interestId": 1
+			"user": 32,
+			"interest": 1
 		},
 		{
-			"userId": 33,
-			"interestId": 3
+			"user": 33,
+			"interest": 3
 		},
 		{
-			"userId": 34,
-			"interestId": 11
+			"user": 34,
+			"interest": 11
 		},
 		{
-			"userId": 35,
-			"interestId": 8
+			"user": 35,
+			"interest": 8
 		},
 		{
-			"userId": 36,
-			"interestId": 14
+			"user": 36,
+			"interest": 14
 		},
 		{
-			"userId": 37,
-			"interestId": 14
+			"user": 37,
+			"interest": 14
 		},
 		{
-			"userId": 38,
-			"interestId": 8
+			"user": 38,
+			"interest": 8
 		},
 		{
-			"userId": 39,
-			"interestId": 11
+			"user": 39,
+			"interest": 11
 		},
 		{
-			"userId": 40,
-			"interestId": 1
+			"user": 40,
+			"interest": 1
 		},
 		{
-			"userId": 41,
-			"interestId": 11
+			"user": 41,
+			"interest": 11
 		},
 		{
-			"userId": 42,
-			"interestId": 13
+			"user": 42,
+			"interest": 13
 		},
 		{
-			"userId": 43,
-			"interestId": 3
+			"user": 43,
+			"interest": 3
 		},
 		{
-			"userId": 44,
-			"interestId": 11
+			"user": 44,
+			"interest": 11
 		},
 		{
-			"userId": 45,
-			"interestId": 10
+			"user": 45,
+			"interest": 10
 		},
 		{
-			"userId": 46,
-			"interestId": 2
+			"user": 46,
+			"interest": 2
 		},
 		{
-			"userId": 47,
-			"interestId": 1
+			"user": 47,
+			"interest": 1
 		},
 		{
-			"userId": 48,
-			"interestId": 5
+			"user": 48,
+			"interest": 5
 		},
 		{
-			"userId": 49,
-			"interestId": 15
+			"user": 49,
+			"interest": 15
 		},
 		{
-			"userId": 50,
-			"interestId": 2
+			"user": 50,
+			"interest": 2
 		},
 		{
-			"userId": 51,
-			"interestId": 15
+			"user": 51,
+			"interest": 15
 		},
 		{
-			"userId": 52,
-			"interestId": 7
+			"user": 52,
+			"interest": 7
 		},
 		{
-			"userId": 53,
-			"interestId": 1
+			"user": 53,
+			"interest": 1
 		},
 		{
-			"userId": 54,
-			"interestId": 6
+			"user": 54,
+			"interest": 6
 		},
 		{
-			"userId": 55,
-			"interestId": 7
+			"user": 55,
+			"interest": 7
 		},
 		{
-			"userId": 56,
-			"interestId": 8
+			"user": 56,
+			"interest": 8
 		},
 		{
-			"userId": 57,
-			"interestId": 9
+			"user": 57,
+			"interest": 9
 		},
 		{
-			"userId": 58,
-			"interestId": 3
+			"user": 58,
+			"interest": 3
 		},
 		{
-			"userId": 59,
-			"interestId": 6
+			"user": 59,
+			"interest": 6
 		},
 		{
-			"userId": 60,
-			"interestId": 11
+			"user": 60,
+			"interest": 11
 		},
 		{
-			"userId": 61,
-			"interestId": 3
+			"user": 61,
+			"interest": 3
 		},
 		{
-			"userId": 62,
-			"interestId": 10
+			"user": 62,
+			"interest": 10
 		},
 		{
-			"userId": 63,
-			"interestId": 10
+			"user": 63,
+			"interest": 10
 		},
 		{
-			"userId": 64,
-			"interestId": 4
+			"user": 64,
+			"interest": 4
 		},
 		{
-			"userId": 65,
-			"interestId": 13
+			"user": 65,
+			"interest": 13
 		},
 		{
-			"userId": 66,
-			"interestId": 1
+			"user": 66,
+			"interest": 1
 		},
 		{
-			"userId": 67,
-			"interestId": 6
+			"user": 67,
+			"interest": 6
 		},
 		{
-			"userId": 68,
-			"interestId": 15
+			"user": 68,
+			"interest": 15
 		},
 		{
-			"userId": 69,
-			"interestId": 4
+			"user": 69,
+			"interest": 4
 		},
 		{
-			"userId": 70,
-			"interestId": 5
+			"user": 70,
+			"interest": 5
 		},
 		{
-			"userId": 71,
-			"interestId": 8
+			"user": 71,
+			"interest": 8
 		},
 		{
-			"userId": 72,
-			"interestId": 14
+			"user": 72,
+			"interest": 14
 		},
 		{
-			"userId": 73,
-			"interestId": 8
+			"user": 73,
+			"interest": 8
 		},
 		{
-			"userId": 74,
-			"interestId": 10
+			"user": 74,
+			"interest": 10
 		},
 		{
-			"userId": 75,
-			"interestId": 9
+			"user": 75,
+			"interest": 9
 		},
 		{
-			"userId": 76,
-			"interestId": 8
+			"user": 76,
+			"interest": 8
 		},
 		{
-			"userId": 77,
-			"interestId": 11
+			"user": 77,
+			"interest": 11
 		},
 		{
-			"userId": 78,
-			"interestId": 2
+			"user": 78,
+			"interest": 2
 		},
 		{
-			"userId": 79,
-			"interestId": 13
+			"user": 79,
+			"interest": 13
 		},
 		{
-			"userId": 80,
-			"interestId": 2
+			"user": 80,
+			"interest": 2
 		},
 		{
-			"userId": 81,
-			"interestId": 2
+			"user": 81,
+			"interest": 2
 		},
 		{
-			"userId": 82,
-			"interestId": 2
+			"user": 82,
+			"interest": 2
 		},
 		{
-			"userId": 83,
-			"interestId": 10
+			"user": 83,
+			"interest": 10
 		},
 		{
-			"userId": 84,
-			"interestId": 3
+			"user": 84,
+			"interest": 3
 		},
 		{
-			"userId": 85,
-			"interestId": 14
+			"user": 85,
+			"interest": 14
 		},
 		{
-			"userId": 86,
-			"interestId": 9
+			"user": 86,
+			"interest": 9
 		},
 		{
-			"userId": 87,
-			"interestId": 11
+			"user": 87,
+			"interest": 11
 		},
 		{
-			"userId": 88,
-			"interestId": 5
+			"user": 88,
+			"interest": 5
 		},
 		{
-			"userId": 89,
-			"interestId": 12
+			"user": 89,
+			"interest": 12
 		},
 		{
-			"userId": 90,
-			"interestId": 3
+			"user": 90,
+			"interest": 3
 		},
 		{
-			"userId": 91,
-			"interestId": 12
+			"user": 91,
+			"interest": 12
 		},
 		{
-			"userId": 92,
-			"interestId": 8
+			"user": 92,
+			"interest": 8
 		},
 		{
-			"userId": 93,
-			"interestId": 1
+			"user": 93,
+			"interest": 1
 		},
 		{
-			"userId": 94,
-			"interestId": 2
+			"user": 94,
+			"interest": 2
 		},
 		{
-			"userId": 95,
-			"interestId": 5
+			"user": 95,
+			"interest": 5
 		},
 		{
-			"userId": 96,
-			"interestId": 5
+			"user": 96,
+			"interest": 5
 		},
 		{
-			"userId": 97,
-			"interestId": 13
+			"user": 97,
+			"interest": 13
 		},
 		{
-			"userId": 98,
-			"interestId": 10
+			"user": 98,
+			"interest": 10
 		},
 		{
-			"userId": 99,
-			"interestId": 12
+			"user": 99,
+			"interest": 12
 		},
 		{
-			"userId": 100,
-			"interestId": 6
+			"user": 100,
+			"interest": 6
 		},
 		{
-			"userId": 101,
-			"interestId": 15
+			"user": 101,
+			"interest": 15
 		},
 		{
-			"userId": 102,
-			"interestId": 7
+			"user": 102,
+			"interest": 7
 		},
 		{
-			"userId": 103,
-			"interestId": 4
+			"user": 103,
+			"interest": 4
 		},
 		{
-			"userId": 104,
-			"interestId": 4
+			"user": 104,
+			"interest": 4
 		},
 		{
-			"userId": 105,
-			"interestId": 5
+			"user": 105,
+			"interest": 5
 		},
 		{
-			"userId": 106,
-			"interestId": 8
+			"user": 106,
+			"interest": 8
 		},
 		{
-			"userId": 107,
-			"interestId": 1
+			"user": 107,
+			"interest": 1
 		},
 		{
-			"userId": 108,
-			"interestId": 14
+			"user": 108,
+			"interest": 14
 		},
 		{
-			"userId": 109,
-			"interestId": 8
+			"user": 109,
+			"interest": 8
 		},
 		{
-			"userId": 110,
-			"interestId": 15
+			"user": 110,
+			"interest": 15
 		},
 		{
-			"userId": 111,
-			"interestId": 9
+			"user": 111,
+			"interest": 9
 		},
 		{
-			"userId": 112,
-			"interestId": 1
+			"user": 112,
+			"interest": 1
 		},
 		{
-			"userId": 113,
-			"interestId": 9
+			"user": 113,
+			"interest": 9
 		},
 		{
-			"userId": 114,
-			"interestId": 6
+			"user": 114,
+			"interest": 6
 		},
 		{
-			"userId": 115,
-			"interestId": 3
+			"user": 115,
+			"interest": 3
 		},
 		{
-			"userId": 116,
-			"interestId": 8
+			"user": 116,
+			"interest": 8
 		},
 		{
-			"userId": 117,
-			"interestId": 10
+			"user": 117,
+			"interest": 10
 		},
 		{
-			"userId": 118,
-			"interestId": 8
+			"user": 118,
+			"interest": 8
 		},
 		{
-			"userId": 119,
-			"interestId": 15
+			"user": 119,
+			"interest": 15
 		},
 		{
-			"userId": 120,
-			"interestId": 15
+			"user": 120,
+			"interest": 15
 		},
 		{
-			"userId": 121,
-			"interestId": 13
+			"user": 121,
+			"interest": 13
 		}
 	],
 	"likes": [
@@ -4077,7 +4077,7 @@
 			"target": 1
 		}
 	],
-	"history": [
+	"visitHistory": [
 		{
 			"visitor": 75,
 			"host": 1

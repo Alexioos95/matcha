@@ -1,14 +1,9 @@
 <?php
-	require_once "db.php";
-	require_once "auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	// Login requirement
-	if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /login.php");
-		exit;
-	}
-	requireCompleteProfile();
+	requireLogin();
+	requireProfile();
 	updateLastOnline($pdo);
 	// Today
 	$today = new DateTime();
@@ -37,16 +32,16 @@
 		MIN(6371 * ACOS(GREATEST(-1, LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(lat)) * COS(RADIANS(lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(lat)))))) AS minDist,
 		MAX(6371 * ACOS(GREATEST(-1, LEAST(1, COS(RADIANS(:myLat)) * COS(RADIANS(lat)) * COS(RADIANS(lon) - RADIANS(:myLon)) + SIN(RADIANS(:myLat)) * SIN(RADIANS(lat)))))) AS maxDist
 		FROM profiles p
-		WHERE author <> :userId
+		WHERE author <> :user
 		AND (preference = 'either' OR preference = :myGender)
 		AND (:myPreference = 'either' OR gender = :myPreference)
 		AND NOT EXISTS (
 			SELECT 1
 			FROM blocks b
-			WHERE (b.author = :userId AND b.target = p.author) OR (b.author = p.author AND b.target = :userId)
+			WHERE (b.author = :user AND b.target = p.author) OR (b.author = p.author AND b.target = :user)
 		)
 	");
-	$filterPhReq->bindValue(":userId", $_SESSION["user"]["id"], PDO::PARAM_INT);
+	$filterPhReq->bindValue(":user", $_SESSION["user"]["id"], PDO::PARAM_INT);
 	$filterPhReq->bindValue(":myGender", $_SESSION["profile"]["gender"], PDO::PARAM_STR);
 	$filterPhReq->bindValue(":myPreference", $_SESSION["profile"]["preference"], PDO::PARAM_STR);
 	$filterPhReq->bindValue(":myLat", $_SESSION["profile"]["lat"]);
@@ -91,13 +86,13 @@
 		(
 			SELECT COUNT(*)
 			FROM userInterests myTags
-			INNER JOIN userInterests theirTags ON myTags.interestId = theirTags.interestId
-			WHERE myTags.userId = :userId
-			AND theirTags.userId = u.id
+			INNER JOIN userInterests theirTags ON myTags.interest = theirTags.interest
+			WHERE myTags.user = :user
+			AND theirTags.user = u.id
 		) AS tags
 		FROM profiles p
 		INNER JOIN users u ON p.author = u.id
-		WHERE u.id <> :userId AND u.isComplete = TRUE
+		WHERE u.id <> :user AND u.isComplete = TRUE
 		AND (p.preference = 'either' OR p.preference = :myGender)
 		AND (:myPreference = 'either' OR p.gender = :myPreference)
 		AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) BETWEEN :ageMin AND :ageMax
@@ -106,22 +101,22 @@
 		AND NOT EXISTS (
 			SELECT 1
 			FROM blocks b
-			WHERE (b.author = :userId AND b.target = u.id) OR (b.author = u.id AND b.target = :userId)
+			WHERE (b.author = :user AND b.target = u.id) OR (b.author = u.id AND b.target = :user)
 		)
 	";
 	if ($filters[6])
 	{
-		$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId1) ";
+		$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.user = u.id AND ui.interest = :interest1) ";
 		if ($filters[7])
 		{
-			$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId2) ";
+			$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.user = u.id AND ui.interest = :interest2) ";
 			if ($filters[8])
-				$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.userId = u.id AND ui.interestId = :interestId3) ";
+				$query .= " AND EXISTS (SELECT 1 FROM userInterests ui WHERE ui.user = u.id AND ui.interest = :interest3) ";
 		}
 	}
 	$query .= "ORDER BY " . $app . " LIMIT 40";
 	$req = $pdo->prepare($query);
-	$req->bindValue(":userId", $_SESSION["user"]["id"], PDO::PARAM_INT);
+	$req->bindValue(":user", $_SESSION["user"]["id"], PDO::PARAM_INT);
 	$req->bindValue(":myGender", $_SESSION["profile"]["gender"], PDO::PARAM_STR);
 	$req->bindValue(":myPreference", $_SESSION["profile"]["preference"], PDO::PARAM_STR);
 	$req->bindValue(":myLat", $_SESSION["profile"]["lat"]);
@@ -134,12 +129,12 @@
 	$req->bindValue(":fameMax", $filters[5], PDO::PARAM_INT);
 	if ($filters[6])
 	{
-		$req->bindValue(":interestId1", $filters[6], PDO::PARAM_INT);
+		$req->bindValue(":interest1", $filters[6], PDO::PARAM_INT);
 		if ($filters[7])
 		{
-			$req->bindValue(":interestId2", $filters[7], PDO::PARAM_INT);
+			$req->bindValue(":interest2", $filters[7], PDO::PARAM_INT);
 			if ($filters[8])
-				$req->bindValue(":interestId3", $filters[8], PDO::PARAM_INT);
+				$req->bindValue(":interest3", $filters[8], PDO::PARAM_INT);
 		}
 	}
 	$req->execute();
@@ -150,39 +145,10 @@
 
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Match with your soulmate!">
-		<title>Matcha</title>
-		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-		<script src="https://kit.fontawesome.com/70111f5ad5.js" crossorigin="anonymous"></script>
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-		<link rel="stylesheet" type="text/css" href="./styles.css">
-	</head>
-	<body class="index-body">
+	<?php require_once "/usr/local/bin/includes/head.php" ?>
+	<body class="index">
 		<div class="modal hidden"></div>
-		<header>
-			<h1>Matcha</h1>
-			<nav>
-				<ul>
-					<li><a href="/"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></a></li>
-					<?php
-						if (isset($_SESSION["user"]) && isset($_SESSION["user"]["id"]))
-						{
-							echo "<li><a href='/connections.php'><i class='fa-solid fa-people-arrows'></i><span>Connections</span></a></li>";
-							echo "<li><a href='/settings.php'><i class='fa-solid fa-gear'></i><span>Settings</span></a></li>";
-							echo "<li><a href='/api/logout.php'><i class='fa-solid fa-right-from-bracket'></i><span>Logout</span></a></li>";
-						}
-						else
-							echo "<li><a href='/login.php'><i class='fa-solid fa-user'></i><span>Login</span></a></li>";
-					?>
-				</ul>
-			</nav>
-		</header>
+		<?php require_once "/usr/local/bin/includes/header.php" ?>
 		<main>
 			<div class="grid-container">
 				<form method="GET">
@@ -192,48 +158,48 @@
 								<div class="search-range">
 									<label for="age-slider">Age</label>
 									<div class="drange">
-										<input class="sliders-min" id="age-slider" name="ageMin" type="range" min="<?php echo htmlspecialchars($filterPh['minAge']) ?>" max="<?php echo htmlspecialchars($filterPh['maxAge']) ?>" value="<?php echo htmlspecialchars($filters[0]) ?>">
-										<input class="sliders-max" name="ageMax" type="range" min="<?php echo htmlspecialchars($filterPh['minAge']) ?>" max="<?php echo htmlspecialchars($filterPh['maxAge']) ?>" value="<?php echo htmlspecialchars($filters[1]) ?>">
-										<div class="dmin"><?php echo htmlspecialchars($filters[0]) ?></div>
-										<div class="dmax"><?php echo htmlspecialchars($filters[1]) ?></div>
+										<input class="sliders-min" id="age-slider" name="ageMin" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[0]) ?>" aria-label="Minimum age for filter">
+										<input class="sliders-max" name="ageMax" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[1]) ?>" aria-label="Maximum age for filter">
+										<div class="dmin"><?= htmlspecialchars($filters[0]) ?></div>
+										<div class="dmax"><?= htmlspecialchars($filters[1]) ?></div>
 									</div>
 								</div>
 								<div class="search-range">
 									<label for="distance-slider">Distance</label>
 									<div class="drange">
-										<input class="sliders-min" id="distance-slider" name="distMin" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?php echo htmlspecialchars($filters[2]) ?>">
-										<input class="sliders-max" name="distMax" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?php echo htmlspecialchars($filters[3]) ?>">
-										<div class="dmin"><?php echo htmlspecialchars((int)$filters[2]) ?></div>
-										<div class="dmax"><?php echo htmlspecialchars((int)$filters[3]) ?></div>
+										<input class="sliders-min" id="distance-slider" name="distMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[2]) ?>" aria-label="Minimum distance for filter">
+										<input class="sliders-max" name="distMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[3]) ?>" aria-label="Maximum distance for filter">
+										<div class="dmin"><?= htmlspecialchars((int)$filters[2]) ?></div>
+										<div class="dmax"><?= htmlspecialchars((int)$filters[3]) ?></div>
 									</div>
 								</div>
 								<div class="search-range">
 									<label for="fame-slider">Fame</label>
 									<div class="drange">
-										<input class="sliders-min" id="fame-slider" name="fameMin" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?php echo htmlspecialchars($filters[4]) ?>">
-										<input class="sliders-max" name="fameMax" type="range" min="<?php echo htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?php echo htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?php echo htmlspecialchars($filters[5]) ?>">
-										<div class="dmin"><?php echo htmlspecialchars($filters[4]) ?></div>
-										<div class="dmax"><?php echo htmlspecialchars($filters[5]) ?></div>
+										<input class="sliders-min" id="fame-slider" name="fameMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[4]) ?>" aria-label="Minimum fame for filter">
+										<input class="sliders-max" name="fameMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[5]) ?>" aria-label="Maximum fame for filter">
+										<div class="dmin"><?= htmlspecialchars($filters[4]) ?></div>
+										<div class="dmax"><?= htmlspecialchars($filters[5]) ?></div>
 									</div>
 								</div>
 							</div>
 							<div class="filter-select-wrapper">
-								<select class="filter-select" name="int1">
+								<select class="filter-select" name="int1" aria-label="Select an interest to filter">
 									<option value="">Select an interest</option>
 									<?php foreach ($ints as $int): ?>
-									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[6] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[6] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
 									<?php endforeach; ?>
 								</select>
-								<select class="filter-select hidden" name="int2">
+								<select class="filter-select hidden" name="int2" aria-label="Select an interest to filter">
 									<option value="">Select an interest</option>
 									<?php foreach ($ints as $int): ?>
-									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[7] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[7] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
 									<?php endforeach; ?>
 								</select>
-								<select class="filter-select hidden" name="int3">
+								<select class="filter-select hidden" name="int3" aria-label="Select an interest to filter">
 									<option value="">Select an interest</option>
 									<?php foreach ($ints as $int): ?>
-									<option value="<?php echo $int['id']; ?>" <?php echo $int["id"] == $filters[8] ? "selected" : ""; ?>><?php echo htmlspecialchars($int['name']); ?></option>
+									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[8] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
@@ -246,35 +212,36 @@
 					<div class="sort-wrapper">
 						<label for="sorting"><i class="fa-solid fa-filter"></i> Sort by:</label>
 						<input class="sort-input" name="sort" type="hidden"></input>
-						<button type="button" id="sorting" class="sort-button interest <?php echo $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
-						<button type="button" class="sort-button interest <?php echo $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide"></i></span></button>
-						<button type="button" class="sort-button interest <?php echo $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short"></i></span></button>
-						<button type="button" class="sort-button interest <?php echo $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
-						<button type="button" class="sort-button interest <?php echo $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
+						<button type="button" id="sorting" class="sort-button interest <?= $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
+						<button type="button" class="sort-button interest <?= $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide"></i></span></button>
+						<button type="button" class="sort-button interest <?= $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short"></i></span></button>
+						<button type="button" class="sort-button interest <?= $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
+						<button type="button" class="sort-button interest <?= $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
 					</div>
 				</form>
 			<?php while ($row = $req->fetch(PDO::FETCH_ASSOC)): ?>
-				<?php $birthDate = new DateTime($row["birthdate"]); $age = $birthDate->diff($today)->y; ?>
+				<?php
+					$birthDate = new DateTime($row["birthdate"]);
+					$age = $birthDate->diff($today)->y;
+				?>
 				<div class="grid-items">
-					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?php echo htmlspecialchars($row['id']); ?>">
+					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>">
 						<span class="overlay top">
 							<span class="label">
 								<i class="fa-solid fa-star label"></i>
-								<?php echo htmlspecialchars(ucfirst($row['fame'])); ?>
+								<?= htmlspecialchars(ucfirst($row['fame'])); ?>
 							</span>
-							<span class="label"><?php echo htmlspecialchars((int)$row['distance']) . "km" ?></span>
+							<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 						</span>
-						<img src="<?php echo htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?php echo htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) ?>"></img>
-						<span class="overlay bottom"><?php echo htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+						<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) ?>"></img>
+						<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
 					</button>
 				</div>
 			<?php endwhile; ?>
 			</div>
 			<div class="load-trigger"></div>
 		</main>
-		<footer>
-			<p>Matcha by apayen@student.42.fr</p>
-		</footer>
+		<?php require_once "/usr/local/bin/includes/footer.php" ?>
 		<script>
 			// Advanced search
 			const submitSearch = document.getElementsByClassName("submit-search")[0];
@@ -360,12 +327,12 @@
 			// Advanced search - Reset
 			const resetButton = document.getElementsByClassName("reset-search")[0];
 			resetButton.addEventListener("click", () => {
-				slidersMin[0].value = <?php echo $defaults[0] ?>;
-				slidersMax[0].value = <?php echo $defaults[1] ?>;
-				slidersMin[1].value = <?php echo $defaults[2] ?>;
-				slidersMax[1].value = <?php echo $defaults[3] ?>;
-				slidersMin[2].value = <?php echo $defaults[4] ?>;
-				slidersMax[2].value = <?php echo $defaults[5] ?>;
+				slidersMin[0].value = <?= $defaults[0] ?>;
+				slidersMax[0].value = <?= $defaults[1] ?>;
+				slidersMin[1].value = <?= $defaults[2] ?>;
+				slidersMax[1].value = <?= $defaults[3] ?>;
+				slidersMin[2].value = <?= $defaults[4] ?>;
+				slidersMax[2].value = <?= $defaults[5] ?>;
 				selects[0].value = "";
 				selects[1].value = "";
 				selects[2].value = "";
@@ -407,7 +374,7 @@
 									method: "POST",
 									headers: {"Content-Type": "application/json"},
 									body: JSON.stringify({
-										csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 										id: b.dataset.id
 									})
 								});
@@ -420,7 +387,7 @@
 									method: "POST",
 									headers: {"Content-Type": "application/json"},
 									body: JSON.stringify({
-										csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 										id: b.dataset.id
 									})
 								})
@@ -463,6 +430,13 @@
 														<path d="M91 593 c-48 -24 -84 -83 -89 -148 -8 -96 60 -207 209 -340 95 -85 104 -90 131 -73 38 25 161 139 201 188 89 106 117 212 77 294 -26 55 -67 86 -120 93 -61 8 -106 -5 -146 -42 l-36 -35 -19 24 c-42 53 -141 72 -208 39z"/>
 													</g>
 												</svg>`;
+												const link = document.createElement("a");
+												link.href = "#";
+												const icon = document.createElement("i");
+												icon.classList.add("fa-solid", "fa-comments");
+												link.append(icon);
+												modalActions[1].insertAdjacentElement("afterend", link);
+												setTimeout(() => {alert("You matched! You can now initiate a discussion.");}, 100);
 											}
 										}
 									});
@@ -474,7 +448,7 @@
 										method: "POST",
 										headers: {"Content-Type": "application/json"},
 										body: JSON.stringify({
-											csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+											csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 											id: b.dataset.id
 										})
 									});
@@ -482,7 +456,7 @@
 								}
 							});
 						}
-					})
+					});
 			}
 			const modal = document.getElementsByClassName("modal")[0];
 			modal.addEventListener("click", (e) => {
@@ -500,7 +474,7 @@
 					const cards = document.getElementsByClassName("modal-button");
 					if (cards && cards.length > 0)
 					{
-						fetch("/api/load_more.php?type=index&ageMin=<?php echo $filters[0] ?>&ageMax=<?php echo $filters[1] ?>&distMin=<?php echo $filters[2] ?>&distMax=<?php echo $filters[3] ?>&fameMin=<?php echo $filters[4] ?>&fameMax=<?php echo $filters[5] ?>&int1=<?php echo $filters[6] ?>&int2=<?php echo $filters[7] ?>&int3=<?php echo $filters[8] ?>&sort=<?php echo $sort ?>&offset=" + cards.length)
+						fetch("/api/load_more.php?type=index&ageMin=<?= $filters[0] ?>&ageMax=<?= $filters[1] ?>&distMin=<?= $filters[2] ?>&distMax=<?= $filters[3] ?>&fameMin=<?= $filters[4] ?>&fameMax=<?= $filters[5] ?>&int1=<?= $filters[6] ?>&int2=<?= $filters[7] ?>&int3=<?= $filters[8] ?>&sort=<?= $sort ?>&offset=" + cards.length)
 							.then(res => res.text())
 							.then(data => {
 								if (data.trim() === "")

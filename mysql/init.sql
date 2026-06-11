@@ -35,7 +35,7 @@ CREATE TABLE profiles (
 	FOREIGN KEY (author) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE history (
+CREATE TABLE visitHistory (
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	host INT NOT NULL,
 	visitor INT NOT NULL,
@@ -73,11 +73,11 @@ CREATE TABLE interests (
 );
 
 CREATE TABLE userInterests (
-	userId INT NOT NULL,
-	interestId INT NOT NULL,
-	PRIMARY KEY (userId, interestId),
-	FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
-	FOREIGN KEY (interestId) REFERENCES interests(id) ON DELETE CASCADE
+	user INT NOT NULL,
+	interest INT NOT NULL,
+	PRIMARY KEY (user, interest),
+	FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (interest) REFERENCES interests(id) ON DELETE CASCADE
 );
 
 CREATE TABLE mailQueue (

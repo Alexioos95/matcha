@@ -1,12 +1,8 @@
 <?php
-	require_once "../db.php";
-	require_once "../auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /login.php");
-		exit;
-	}
+	requireLogin();
 	$id = $_GET['id'] ?? null;
 	if (!$id || !is_numeric($id))
 		exit;
@@ -54,7 +50,7 @@
 	$intReq = $pdo->prepare("SELECT * from interests");
 	$intReq->execute();
 
-	$uIntReq = $pdo->prepare("SELECT * FROM userInterests WHERE userId = ?");
+	$uIntReq = $pdo->prepare("SELECT * FROM userInterests WHERE user = ?");
 	$uIntReq->execute([$id]);
 	$int = $intReq->fetchAll(PDO::FETCH_ASSOC);
 
@@ -65,11 +61,11 @@
 	$hisLikeReq->execute([$id, $_SESSION["user"]["id"]]);
 	$hisLike = $hisLikeReq->fetch(PDO::FETCH_ASSOC);
 
-	$checkReq = $pdo->prepare("SELECT 1 FROM history WHERE host = ? AND visitor = ?");
+	$checkReq = $pdo->prepare("SELECT 1 FROM visitHistory WHERE host = ? AND visitor = ?");
 	$checkReq->execute([$id, $_SESSION["user"]["id"]]);
 	if (!$checkReq->fetch(PDO::FETCH_ASSOC))
 	{
-		$historyReq = $pdo->prepare("INSERT INTO history (host, visitor) VALUES (?, ?)");
+		$historyReq = $pdo->prepare("INSERT INTO visitHistory (host, visitor) VALUES (?, ?)");
 		$historyReq->execute([$id, $_SESSION["user"]["id"]]);
 		updateFameScore($pdo, $id);
 		updateLastOnline($pdo);
@@ -78,7 +74,7 @@
 
 <div class="modal-profile">
 	<div class="modal-header">
-		<h3><?php echo htmlspecialchars($row["firstName"] . " " . $row["lastName"]) ?><span class="label"><?php echo ", " . $age ?></span></h3>
+		<h3><?= htmlspecialchars($row["firstName"] . " " . $row["lastName"]) ?><span class="label"><?= ", " . $age ?></span></h3>
 	</div>
 	<div class="modal-body">
 		<div class="modal-infos">
@@ -86,29 +82,29 @@
 				<div>
 					<div title="Gender">
 						<i class="fa-solid fa-address-card label"></i>
-						<span class="label"><?php echo $row["gender"] !== null ? htmlspecialchars(ucfirst($row["gender"])) : ""; ?></span>
+						<span class="label"><?= $row["gender"] !== null ? htmlspecialchars(ucfirst($row["gender"])) : ""; ?></span>
 					</div>
 					<div title="Birthday">
 						<i class="fa-solid fa-cake-candles label"></i>
-						<span class="label"><?php echo htmlspecialchars(ucfirst($row['birthdate'])); ?></span>
+						<span class="label"><?= htmlspecialchars(ucfirst($row['birthdate'])); ?></span>
 					</div>
 					<div title="Preference">
 						<i class="fa-solid fa-heart label"></i>
-						<span class="label"><?php echo $row['preference'] !== null ? htmlspecialchars(ucfirst($row['preference'])) : ''; ?></span>
+						<span class="label"><?= $row['preference'] !== null ? htmlspecialchars(ucfirst($row['preference'])) : ''; ?></span>
 					</div>
 				</div>
 				<div class="align-right">
 					<div title="Fame rating">
-						<span class="label"><?php echo $row['fame'] !== null ? htmlspecialchars(ucfirst($row['fame'])) : ''; ?></span>
+						<span class="label"><?= $row['fame'] !== null ? htmlspecialchars(ucfirst($row['fame'])) : ''; ?></span>
 						<i class="fa-solid fa-star label"></i>
 					</div>
 					<div title="Location">
-						<span class="label"><?php echo htmlspecialchars($row["city"] . ", " . $row["country"]); ?></span>
+						<span class="label"><?= htmlspecialchars($row["city"] . ", " . $row["country"]); ?></span>
 						<i class="fa-solid fa-location-dot label"></i></i>
 					</div>
-					<div title="<?php echo htmlspecialchars("Last online: " . $_SESSION['user']['lastOnline']); ?>">
-						<span class="label <?php echo $online == true ? 'online' : 'offline'?>"><?php echo $status ?></span>
-						<i class="fa-solid fa-tower-broadcast label <?php echo $online == true ? 'online' : 'offline'?>"></i>
+					<div title="<?= htmlspecialchars("Last online: " . $_SESSION['user']['lastOnline']); ?>">
+						<span class="label <?= $online == true ? 'online' : 'offline'?>"><?= $status ?></span>
+						<i class="fa-solid fa-tower-broadcast label <?= $online == true ? 'online' : 'offline'?>"></i>
 					</div>
 				</div>
 			</div>
@@ -118,7 +114,7 @@
 				<i class="fa-solid fa-circle-arrow-left"></i>
 			</button>
 			<div class="modal-carousel">
-				<img src="<?php echo htmlspecialchars($row['primaryPicture'])?>" alt="Primary picture"></img>
+				<img src="<?= htmlspecialchars($row['primaryPicture'])?>" alt="Primary picture"></img>
 				<?php
 					if (isset($row["secondaryPictureOne"]) && $row["secondaryPictureOne"])
 						echo "<img src='" . htmlspecialchars($row['secondaryPictureOne']) . "' alt='Secondary picture'>";
@@ -138,15 +134,15 @@
 			<span class="label"><i class="fa-solid fa-tags"></i> My interests</span>
 			<div class="group-interest">
 				<?php while ($uIntRow = $uIntReq->fetch(PDO::FETCH_ASSOC)): ?>
-					<div type="button" class="interest" data-interest-id="<?php echo htmlspecialchars($uIntRow['interestId']) ?>">
-						<span><?php echo htmlspecialchars($int[$uIntRow["interestId"] - 1]["name"]) ?></span>
+					<div type="button" class="interest" data-interest-id="<?= htmlspecialchars($uIntRow['interest']) ?>">
+						<span><?= htmlspecialchars($int[$uIntRow["interest"] - 1]["name"]) ?></span>
 					</div>
 				<?php endwhile; ?>
 			</div>
 		</div>
 		<div class="form-group-modal">
 			<span class="label"><i class="fa-solid fa-quote-left"></i> About me</span>
-			<p><?php echo htmlspecialchars($row["bio"]) ?></p>
+			<p><?= htmlspecialchars($row["bio"]) ?></p>
 		</div>
 	</div>
 	<div class="modal-footer">

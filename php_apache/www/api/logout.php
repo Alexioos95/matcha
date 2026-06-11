@@ -1,6 +1,6 @@
 <?php
-	require_once "../db.php";
-	require_once "../auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
 	$req = $pdo->prepare("UPDATE users SET cookieToken = NULL, cookieExpires = NULL WHERE id = ?");
 	$req->execute([$_SESSION["user"]["id"]]);

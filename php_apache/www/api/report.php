@@ -1,7 +1,7 @@
 <?php
 	session_start();
-	require_once "../db.php";
-	require_once "../auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
 	header('Content-Type: application/json');
 	if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))

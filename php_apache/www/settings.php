@@ -1,37 +1,28 @@
 <?php
-	require_once "db.php";
-	require_once "auth.php";
+	require_once "/usr/local/bin/includes/db.php";
+	require_once "/usr/local/bin/includes/auth.php";
 
-	if (!isset($_SESSION["user"]) || !isset($_SESSION["user"]["id"]))
-	{
-		header("Location: /login.php");
-		exit;
-	}
-	requireCompleteProfile();
+	requireLogin();
+	requireProfile();
+	generateCsrfToken();
 	updateLastOnline($pdo);
-
-	if (empty($_SESSION["csrfToken"]))
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
 	if (isset($_POST["submit_account"]))
 	{
-		if (!isset($_POST["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
-			exit("Invalid CSRF token");
+		verifyCsrfToken();
 		$email = trim($_POST["email"]);
 		$username = trim($_POST["username"]);
 		$password = $_POST["password"];
 		$firstName = trim($_POST["firstName"]);
 		$lastName = trim($_POST["lastName"]);
-		$_SESSION["error"] = "";
-		$_SESSION["success"] = "";
-
+		
 		if ($email != "" && !filter_var($email, FILTER_VALIDATE_EMAIL))
 			$_SESSION["error"] = "Invalid email format.";
-		elseif ($password != "" &&
-				(!preg_match("/[A-Z]/", $password) || !preg_match("/[a-z]/", $password) ||
-				!preg_match("/[0-9]/", $password) || !preg_match("/[\W_]/", $password) || strlen($password) < 8))
+		elseif ($password != "" && (!preg_match("/[A-Z]/", $password) || !preg_match("/[a-z]/", $password) || !preg_match("/[0-9]/", $password) || !preg_match("/[\W_]/", $password) || strlen($password) < 8))
 			$_SESSION["error"] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
 		else
 		{
+			$_SESSION["error"] = "";
+			$_SESSION["success"] = "";
 			if ($email != "")
 			{
 				$req = $pdo->prepare("SELECT id FROM users WHERE email = ?");
@@ -50,7 +41,6 @@
 			{
 				$req = $pdo->prepare("SELECT id FROM users WHERE username = ?");
 				$req->execute([$username]);
-
 				if ($req->rowCount() > 0)
 					$_SESSION["error"] .= "Username already taken.";
 				else
@@ -83,14 +73,13 @@
 				$_SESSION["success"] .= "Updated password.<br>";
 			}
 		}
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+		regenerateCsrfToken();
 		header("Location: /settings.php");
 		exit;
 	}
 	elseif (isset($_POST["submit_profile"]))
 	{
-		if (!isset($_POST["csrfToken"]) || !isset($_SESSION["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $_POST["csrfToken"]))
-			exit("Invalid CSRF token.");
+		verifyCsrfToken();
 		$gender = $_POST["gender"];
 		$preference = $_POST["preference"];
 		$city = trim($_POST["location-city"]);
@@ -129,9 +118,9 @@
 				]
 			]);
 			$res = curl_exec($ch);
-			if ($res === false)
+			if ($res == false)
 			{
-				echo json_encode(["error" => curl_error($ch)]);
+				$_SESSION["error"] = "Sorry, we couldn't identify your location. Try again later or contact the administrator.";
 				header("Location: /settings.php");
 				exit;
 			}
@@ -139,37 +128,13 @@
 			$output = json_decode($res, true);
 			if (empty($output))
 			{
-				$_SESSION["error"] = "Sorry, we couldn't identify your location.";
+				$_SESSION["error"] = "Sorry, we couldn't identify your location. Try again later or contact the administrator.";
 				header("Location: /settings.php");
 				exit;
 			}
 			$lat = $output[0]["lat"];
 			$lon = $output[0]["lon"];
 			// Pictures
-			function saveImage($file, $dir, $pdo, $userId, &$pictures)
-			{
-				$filename = $file["name"];
-				$tempname = $file["tmp_name"];
-				$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-				$finfo = finfo_open(FILEINFO_MIME_TYPE);
-				$mime = finfo_file($finfo, $tempname);
-				finfo_close($finfo);
-
-				if (($extension != "jpg" && $extension != "jpeg" && $extension != "png") || ($mime != "image/jpeg" && $mime != "image/png"))
-					return (false);
-				if ($extension === "png")
-					$image = imagecreatefrompng($tempname);
-				else
-					$image = imagecreatefromjpeg($tempname);
-				if (!$image)
-					return (false);
-				$path = $dir . "/" . uniqid() . "." . $extension;
-				if (($extension === "png" && !imagepng($image, __DIR__ . $path)) || (($extension === "jpg" || $extension === "jpeg") && !imagejpeg($image, __DIR__ . $path)))
-					return (false);
-				imagedestroy($image);
-				$pictures[] = $path;
-				return (true);
-			}
 			$dir = "/uploads/" . $_SESSION["user"]["id"];
 			if (!is_dir(__DIR__ . $dir))
 				mkdir(__DIR__ . $dir, 0774, true);
@@ -177,7 +142,7 @@
 			if ($code == UPLOAD_ERR_OK)
 			{
 				$pic = [];
-				if (!saveImage($_FILES["picture-primary"], $dir, $pdo, $_SESSION["user"]["id"], $pic))
+				if (!saveImage($_FILES["picture-primary"], __DIR__, $dir, $pdo, $pic))
 					$_SESSION["error"] = "An error occured with file uploading. Please try again later.";
 				else
 				{
@@ -200,10 +165,10 @@
 				if ($code == UPLOAD_ERR_OK)
 				{
 					$pic = [];
-					if (!saveImage($_FILES[$str], $dir, $pdo, $_SESSION["user"]["id"], $pic))
+					if (!saveImage($_FILES[$str], __DIR__, $dir, $pdo, $pic))
 					{
 						$_SESSION["error"] = "An error occured with file uploading. Please try again later.";
-						$pic[0] = null;	
+						$pic[0] = null;
 					}
 					elseif ($pictures[$i])
 					{
@@ -214,31 +179,33 @@
 					$pictures[$i] = $pic[0];
 				}
 			}
-			$picArray = array_values(array_filter($pictures, fn($v) => $v !== null));
+			$picArray = array_values(array_filter($pictures, fn($v) => $v != null));
 			for ($i = count($picArray); $i < 4; $i++)
 			{
 				$picArray[] = null;
 			}
 		}
-		$userIntReq = $pdo->prepare("SELECT * from userInterests WHERE userId = ?");
+		// Interests
+		$userIntReq = $pdo->prepare("SELECT * from userInterests WHERE user = ?");
 		$userIntReq->execute([$_SESSION["user"]["id"]]);
-		$userOldInt = array_column($userIntReq->fetchAll(PDO::FETCH_ASSOC), "interestId");
+		$userOldInt = array_column($userIntReq->fetchAll(PDO::FETCH_ASSOC), "interest");
 		foreach ($userOldInt as $oInt)
 		{
 			if (!in_array($oInt, $interests))
 			{
-				$delReq = $pdo->prepare("DELETE FROM userInterests WHERE interestId = ? AND userId = ?");
-				$delReq->execute([$oInt, $_SESSION["user"]["id"]]);
+				$delReq = $pdo->prepare("DELETE FROM userInterests WHERE user = ? AND interest = ?");
+				$delReq->execute([$_SESSION["user"]["id"], $oInt]);
 			}
 		}
 		foreach ($interests as $intId)
 		{
 			if (!in_array($intId, $userOldInt))
 			{
-				$req = $pdo->prepare("INSERT INTO userInterests (userId, interestId) VALUES (?, ?)");
+				$req = $pdo->prepare("INSERT INTO userInterests (user, interest) VALUES (?, ?)");
 				$req->execute([$_SESSION["user"]["id"], $intId]);
 			}
 		}
+		// Update
 		$req = $pdo->prepare("UPDATE profiles SET
 			gender = ?, preference = ?, bio = ?, city = ?, country = ?, lat = ?, lon = ?, primaryPicture = ?,
 			secondaryPictureOne = ?, secondaryPictureTwo = ?, secondaryPictureThree = ?, secondaryPictureFour = ?
@@ -260,7 +227,7 @@
 		$_SESSION["profile"]["secondaryPictureTwo"] = $picArray[1];
 		$_SESSION["profile"]["secondaryPictureThree"] = $picArray[2];
 		$_SESSION["profile"]["secondaryPictureFour"] = $picArray[3];
-		$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+		regenerateCsrfToken();
 		if (!isset($_SESSION["error"]))
 			$_SESSION["success"] = "Successfully updated profile.";
 		header("Location: /settings.php");
@@ -278,85 +245,59 @@
 
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Match with your soulmate!">
-		<title>Matcha</title>
-		<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
-		<script src="https://kit.fontawesome.com/70111f5ad5.js" crossorigin="anonymous"></script>
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-		<link rel="stylesheet" type="text/css" href="./styles.css">
-	</head>
-	<body class="index-body">
-		<header>
-			<h1>Matcha</h1>
-			<nav>
-				<ul>
-					<li><a href="/"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></a></li>
-					<li><a href="/connections.php"><i class="fa-solid fa-people-arrows"></i><span>Connections</span></a></li>
-					<li><a href="/settings.php"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
-					<li><a href="/api/logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a></li>
-				</ul>
-			</nav>
-		</header>
+	<?php $title = " - Settings"; require_once "/usr/local/bin/includes/head.php"; ?>
+	<body class="index">
+		<?php require_once "/usr/local/bin/includes/header.php" ?>
 		<main>
 			<div class="settings">
+				<?php if (isset($_SESSION["error"]) || isset($_SESSION["success"])): ?>
+				<div class="error-wrapper">
+					<p class="log error">
+						<?= isset($_SESSION["error"]) ? $_SESSION["error"] : " "; unset($_SESSION["error"]); ?>
+					</p>
+					<p class="log success">
+						<?= isset($_SESSION["success"]) ? $_SESSION["success"] : " "; unset($_SESSION["success"]); ?>
+					</p>
+				</div>
+				<?php endif; ?>
 				<h2>Update my account</h2>
 				<div>
 					<form action="settings.php" method="POST" autocomplete="off">
-						<input type="hidden" name="csrfToken" value="<?php echo $_SESSION['csrfToken']; ?>">
-						<input type="email" name="email" placeholder="<?php echo htmlspecialchars($_SESSION['user']['email'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Email">
-						<input type="text" name="username" placeholder="<?php echo htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Username">
-						<input type="text" name="firstName" placeholder="<?php echo htmlspecialchars($_SESSION['user']['firstName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-firstName" aria-label="First name">
-						<input type="text" name="lastName" placeholder="<?php echo htmlspecialchars($_SESSION['user']['lastName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-lastName" aria-label="Last name">
+						<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
+						<input type="email" name="email" placeholder="<?= htmlspecialchars($_SESSION['user']['email'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Email">
+						<input type="text" name="username" placeholder="<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Username">
+						<input type="text" name="firstName" placeholder="<?= htmlspecialchars($_SESSION['user']['firstName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-firstName" aria-label="First name">
+						<input type="text" name="lastName" placeholder="<?= htmlspecialchars($_SESSION['user']['lastName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-lastName" aria-label="Last name">
 						<input type="password" name="password" placeholder="Password" autocomplete="new-password" aria-label="Password">
 						<button type="submit" name="submit_account">Submit</button>
 					</form>
 				</div>
-				<div class="error-wrapper">
-					<p class="error">
-						<?php 
-							echo isset($_SESSION["error"]) ? $_SESSION["error"] : " "; 
-							unset($_SESSION["error"]);
-						?>
-					</p>
-					<p class="success">
-					<?php
-						echo isset($_SESSION["success"]) ? $_SESSION["success"] : " "; 
-						unset($_SESSION["success"]);
-					?>
-					</p>
-				</div>
 				<h2>Update my profile</h2>
 				<div>
 					<form action="settings.php" method="POST" autocomplete="off" enctype="multipart/form-data">
-						<input type="hidden" name="csrfToken" value="<?php echo $_SESSION['csrfToken']; ?>">
+						<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
 						<div class="form-group">
 							<label for="gender">Gender</label>
 							<select id="gender" name="gender" required>
-								<option value="male" <?php if (isset($_SESSION['profile']["gender"]) && $_SESSION['profile']["gender"] === "male") echo "selected"; ?>>Male</option>
-								<option value="female" <?php if (isset($_SESSION['profile']["gender"]) && $_SESSION['profile']["gender"] === "female") echo "selected"; ?>>Female</option>
+								<option value="male" <?php if (isset($_SESSION['profile']['gender']) && $_SESSION['profile']['gender'] === 'male') echo 'selected'; ?>>Male</option>
+								<option value="female" <?php if (isset($_SESSION['profile']['gender']) && $_SESSION['profile']['gender'] === 'female') echo 'selected'; ?>>Female</option>
 							</select>
 						</div>
 						<div class="form-group">
 							<label for="preference">Sexual Preferences</label>
 							<select id="preference" name="preference" required>
-								<option value="men" <?php if (isset($_SESSION['profile']["preference"]) && $_SESSION['profile']["preference"] === "men") echo "selected"; ?>>Men</option>
-								<option value="female" <?php if (isset($_SESSION['profile']["preference"]) && $_SESSION['profile']["preference"] === "female") echo "selected"; ?>>Women</option>
-								<option value="either" <?php if (isset($_SESSION['profile']["preference"]) && $_SESSION['profile']["preference"] === "either") echo "selected"; ?>>Either</option>
+								<option value="men" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'men') echo 'selected'; ?>>Men</option>
+								<option value="female" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'female') echo 'selected'; ?>>Women</option>
+								<option value="either" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'either') echo 'selected'; ?>>Either</option>
 							</select>
 						</div>
 						<div class="form-group group-location">
 							<label for="location-country">Location</label>
-							<input type="text" id="location-city" name="location-city" value="<?php echo isset($_SESSION['profile']['city']) ? htmlspecialchars($_SESSION['profile']['city']) : 'City'; ?>">
-							<input type="text" id="location-country" name="location-country" value="<?php echo isset($_SESSION['profile']['country']) ? htmlspecialchars($_SESSION['profile']['country']) : 'Country'; ?>">
+							<input type="text" id="location-city" name="location-city" value="<?= isset($_SESSION['profile']['city']) ? htmlspecialchars($_SESSION['profile']['city']) : 'City'; ?>" aria-label="City">
+							<input type="text" id="location-country" name="location-country" value="<?= isset($_SESSION['profile']['country']) ? htmlspecialchars($_SESSION['profile']['country']) : 'Country'; ?>" aria-label="Country">
 							<i class="fa-solid fa-spinner loader hidden"></i>
 							<button class="geo-button" type="button" title="Let us input your location through a geolocation with the GPS of your device."><i class="fa-solid fa-location-arrow"></i> Use my current location</button>
-							<p class="error geo-error"></p>
+							<p class="log error geo-error"></p>
 						</div>
 						<div class="form-group">
 							<p>Profile picture</p>
@@ -364,10 +305,10 @@
 								<div>
 									<div class="picture-item picture-item-primary">
 									<?php if ($_SESSION["profile"]["primaryPicture"]): ?>
-										<img class="picture-preview" src="<?php echo htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">
+										<img class="picture-preview" src="<?= htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">
 									<?php endif; ?>
 									</div>
-									<button class="picture-upload" type="button"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+									<button class="picture-upload" type="button" aria-label="Upload your profile's picture" title="Upload your profile's picture"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
 									<input class="picture-input" type="file" name="picture-primary" aria-label="Upload an image" accept=".jpg, .jpeg, .png" hidden/>
 								</div>
 							</div>
@@ -379,14 +320,14 @@
 								<div>
 									<div class="picture-item">
 									<?php if ($secondaryPictures[$i]): ?>
-										<img class="picture-preview" src="<?php echo htmlspecialchars($secondaryPictures[$i]); ?>" alt="Secondary picture number <?php echo $i ?>">
+										<img class="picture-preview" src="<?= htmlspecialchars($secondaryPictures[$i]); ?>" alt="Secondary picture number <?= $i ?>">
 										<div class="grid-items-overlay">
-											<button type="button"><i class="fa-solid fa-trash-can"></i></button>
+											<button type="button" aria-label="Delete this picture" title="Delete this picture"><i class="fa-solid fa-trash-can"></i></button>
 										</div>
 									<?php endif; ?>
 									</div>
-									<button class="picture-upload" type="button"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
-									<input class="picture-input" type="file" name="picture-secondary-<?php echo $i + 1 ?>" accept=".jpg, .jpeg, .png" hidden></input>
+									<button class="picture-upload" type="button" aria-label="Upload a secondary picture" title="Upload a secondary picture"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+									<input class="picture-input" type="file" name="picture-secondary-<?= $i + 1 ?>" accept=".jpg, .jpeg, .png" hidden></input>
 								</div>
 							<?php endfor; ?>
 							</div>
@@ -395,8 +336,8 @@
 							<p>Interests</p>
 							<div class="interests-wrapper">
 							<?php while ($row = $intReq->fetch(PDO::FETCH_ASSOC)): ?>
-								<button type="button" class="interest <?php if (isset($_SESSION['profile']['interests']) && in_array($row['id'], $_SESSION['profile']['interests'])) echo 'selected'?>" data-interest-id="<?php echo $row['id']; ?>">
-									<span><?php echo htmlspecialchars($row['name']); ?></span>
+								<button type="button" class="interest <?php if (isset($_SESSION['profile']['interests']) && in_array($row['id'], $_SESSION['profile']['interests'])) echo 'selected'?>" data-interest-id="<?= $row['id']; ?>">
+									<span><?= htmlspecialchars($row['name']); ?></span>
 								</button>
 							<?php endwhile; ?>
 								<input type="hidden" class="interests-selected" name="interests-selected">
@@ -411,9 +352,7 @@
 				</div>
 			</div>
 		</main>
-		<footer>
-			<p>Matcha by apayen@student.42.fr</p>
-		</footer>
+		<?php require_once "/usr/local/bin/includes/footer.php" ?>
 	</body>
 	<script>
 		// Geolocation
@@ -442,10 +381,10 @@
 								method: "POST",
 								headers: {"Content-Type": "application/json"},
 								body: JSON.stringify({
-									csrfToken: "<?php echo $_SESSION['csrfToken'] ?>",
+									csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 									lat: lat,
 									lon: lon,
-									id: <?php echo $_SESSION["user"]["id"] ?>
+									id: <?= $_SESSION["user"]["id"] ?>
 								})
 							})
 								.then(res => res.json())
@@ -469,22 +408,20 @@
 			}
 		}
 		const geoButton = document.getElementsByClassName("geo-button")[0];
-		geoButton.addEventListener("click", () => { geolocation(); });
+		geoButton.addEventListener("click", geolocation);
 		// Pictures
 		const fileInputs = document.getElementsByClassName("picture-input");
 		const uploadButtons = document.getElementsByClassName("picture-upload");
 		const previews = document.getElementsByClassName("picture-item");
 		for (let i = 0; i < 5; i++)
 		{
-			uploadButtons[i].addEventListener("click", () => {
-				fileInputs[i].click();
-			});
+			uploadButtons[i].addEventListener("click", () => { fileInputs[i].click(); });
 			fileInputs[i].addEventListener("change", function () {
 				const file = this.files[0];
 				if (!file)
 				{
 					if (i == 0)
-						previews[i].innerHTML = `<img class="picture-preview" src="<?php echo htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">`;
+						previews[i].innerHTML = `<img class="picture-preview" src="<?= htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">`;
 					else
 						previews[i].innerHTML = "";
 					return ;
@@ -514,7 +451,7 @@
 					fetch("/api/delete.php", {
 						method: "POST",
 						headers: {"Content-Type": "application/x-www-form-urlencoded"},
-						body: new URLSearchParams({i: i, csrfToken: "<?php echo $_SESSION['csrfToken']?>"})
+						body: new URLSearchParams({i: i, csrfToken: "<?= $_SESSION['csrfToken']?>"})
 					})
 				});
 			}
@@ -522,7 +459,8 @@
 		// Interests
 		const intButtons = document.getElementsByClassName("interest");
 		const hiddenInput = document.getElementsByClassName("interests-selected")[0];
-		let selected = <?php echo json_encode($_SESSION["profile"]["interests"] ?? []); ?>;
+		let selected = <?= json_encode($_SESSION["profile"]["interests"] ?? []); ?>;
+		hiddenInput.value = JSON.stringify(selected);
 		Array.from(intButtons).forEach(button => {
 			button.addEventListener("click", () => {
 				const id = Number(button.dataset.interestId);

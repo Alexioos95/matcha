@@ -11,7 +11,7 @@ services:
             - .env
         volumes:
             - ./php_apache/www:/var/www/html:z
-            # - apache_www:/var/www/html
+            - ./php_apache/includes:/usr/local/bin/includes:z
         depends_on:
             - mysql
 
@@ -40,5 +40,4 @@ services:
             - mysql_db:/var/lib/mysql
 
 volumes:
-    # apache_www:
     mysql_db:

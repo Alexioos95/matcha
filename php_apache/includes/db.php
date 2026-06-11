@@ -26,10 +26,51 @@
 		error_log($e->getMessage());
 		die("Couldn't connect to the database");
 	}
+	function isCommonPassword($password)
+	{
+		$hash = strtoupper(sha1($password));
+		$prefix = substr($hash, 0, 5);
+		$suffix = substr($hash, 5);
+		$url = "https://api.pwnedpasswords.com/range/" . $prefix;
+		$res = file_get_contents($url);
+		if ($res == false)
+			return (false);
+		foreach (explode("\n", $res) as $line)
+		{
+			list($hashSuffix, $count) = explode(":", trim($line));
+			if ($hashSuffix === $suffix)
+				return (true);
+		}
+		return (false);
+	}
 
+	function saveImage($file, $dest, $dir, $pdo, &$pictures)
+	{
+		$filename = $file["name"];
+		$tempname = $file["tmp_name"];
+		$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+		$finfo = finfo_open(FILEINFO_MIME_TYPE);
+		$mime = finfo_file($finfo, $tempname);
+		finfo_close($finfo);
+	
+		if (($extension != "jpg" && $extension != "jpeg" && $extension != "png") || ($mime != "image/jpeg" && $mime != "image/png"))
+			return (false);
+		if ($extension === "png")
+			$image = imagecreatefrompng($tempname);
+		else
+			$image = imagecreatefromjpeg($tempname);
+		if (!$image)
+			return (false);
+			$path = $dir . "/" . uniqid() . "." . $extension;
+		if (($extension === "png" && !imagepng($image, $dest . $path)) || (($extension === "jpg" || $extension === "jpeg") && !imagejpeg($image, $dest . $path)))
+			return (false);
+		imagedestroy($image);
+		$pictures[] = $path;
+		return (true);
+	}
 	function updateFameScore($pdo, $id)
 	{
-		$historyReq = $pdo->prepare("SELECT COUNT(*) FROM history WHERE host = ?");
+		$historyReq = $pdo->prepare("SELECT COUNT(*) FROM visitHistory WHERE host = ?");
 		$historyReq->execute([$id]);
 		$likeReq = $pdo->prepare("SELECT COUNT(*) FROM likes WHERE target = ?");
 		$likeReq->execute([$id]);

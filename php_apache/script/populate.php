@@ -1,5 +1,5 @@
 <?php
-	require_once "/var/www/html/db.php";
+	require_once "/usr/local/bin/includes/db.php";
 
 	$data = json_decode(file_get_contents("/usr/local/bin/script/mixture.json"), true);
 	$users = json_decode(file_get_contents("/usr/local/bin/script/mixtures/users.json"), true);
@@ -8,7 +8,6 @@
 	try
 	{
 		$pdo->beginTransaction();
-
 		echo "Starting Population.\n";
 
 		echo "Populating 'users'...\n";
@@ -36,10 +35,10 @@
 		}
 
 		echo "Populating 'userInterests'...\n";
-		$reqUserInterests = $pdo->prepare("INSERT INTO userInterests (userId, interestId) VALUES (?, ?)");
+		$reqUserInterests = $pdo->prepare("INSERT INTO userInterests (user, interest) VALUES (?, ?)");
 		foreach ($data["userInterests"] as $ui)
 		{
-			$reqUserInterests->execute([$ui["userId"], $ui["interestId"]]);
+			$reqUserInterests->execute([$ui["user"], $ui["interest"]]);
 		}
 
 		echo "Populating 'likes'...\n";
@@ -51,16 +50,16 @@
 
 		echo "Populating 'blocks'...\n";
 		$reqBlocks = $pdo->prepare("INSERT INTO blocks (author, target) VALUES (?, ?)");
-		foreach ($data["blocks"] as $l)
+		foreach ($data["blocks"] as $b)
 		{
-			$reqBlocks->execute([$l["author"], $l["target"]]);
+			$reqBlocks->execute([$b["author"], $b["target"]]);
 		}
 
-		echo "Populating 'history'...\n";
-		$reqHistory = $pdo->prepare("INSERT INTO history (host, visitor) VALUES (?, ?)");
-		foreach ($data["history"] as $l)
+		echo "Populating 'visitHistory'...\n";
+		$reqHistory = $pdo->prepare("INSERT INTO visitHistory (host, visitor) VALUES (?, ?)");
+		foreach ($data["visitHistory"] as $vh)
 		{
-			$reqHistory->execute([$l["host"], $l["visitor"]]);
+			$reqHistory->execute([$vh["host"], $vh["visitor"]]);
 		}
 
 		$pdo->commit();
