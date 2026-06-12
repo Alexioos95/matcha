@@ -277,7 +277,8 @@
 							if (count < 20)
 								more[0].remove();
 							container.insertAdjacentHTML("beforeend", data);
-						});
+						})
+						.catch();
 				}
 				else
 					more[0].remove();
@@ -297,7 +298,8 @@
 							if (count < 20)
 								moreLikes.remove();
 							container.insertAdjacentHTML("beforeend", data);
-						});
+						})
+						.catch();
 				}
 				else
 					moreLikes.remove();
@@ -317,7 +319,8 @@
 							if (count < 20)
 								moreLiked.remove();
 							container.insertAdjacentHTML("beforeend", data);
-						});
+						})
+						.catch();
 				}
 				else
 					moreLiked.remove();
@@ -333,7 +336,8 @@
 							csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 							id: b.dataset.id
 						})
-					});
+					})
+						.catch();
 					b.parentElement.parentElement.remove();
 				});
 			});
@@ -382,7 +386,8 @@
 										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 										id: b.dataset.id
 									})
-								});
+								})
+									.catch();
 								modal.classList.add("hidden");
 								modal.innerHTML = "";
 								const div = document.createElement("div");
@@ -400,7 +405,8 @@
 											csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 											id: div.dataset.id
 										})
-									});
+									})
+										.catch();
 									div.parentElement.remove();
 								});
 								document.getElementsByClassName("grid-blocked")[0].prepend(parent);
@@ -465,7 +471,8 @@
 												setTimeout(() => {alert("You matched! You can now initiate a discussion in your discussion.");}, 100);
 											}
 										}
-									});
+									})
+									.catch();
 							});
 							modalActions[2].addEventListener("click", () => {
 								if (confirm("You are about to report this user. Proceed?"))
@@ -477,7 +484,8 @@
 											csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 											id: b.dataset.id
 										})
-									});
+									})
+										.catch();
 									modalActions[2].disabled = true;
 								}
 							});
@@ -485,5 +493,6 @@
 					});
 			}
 		</script>
+		<?php require_once "/usr/local/bin/includes/notifJS.php" ?>
 	</body>
 </html>

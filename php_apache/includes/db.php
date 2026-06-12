@@ -93,4 +93,9 @@
 			$_SESSION["user"]["lastOnline"] = $date;
 		}
 	}
+	function createNotif($pdo, $id, $type)
+	{
+		$notif = $pdo->prepare("INSERT INTO notifs (fromUser, toUser, type) VALUES (?, ?, ?)");
+		$notif->execute([$_SESSION["user"]["id"], $id, $type]);
+	}
 ?>

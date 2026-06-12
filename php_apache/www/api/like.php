@@ -36,16 +36,25 @@
 		$delete->execute([$_SESSION["user"]["id"], $id, $id, $_SESSION["user"]["id"]]);
 		$status = "none";
 		if ($hisLike)
+		{
 			$unmatch = true;
+			createNotif($pdo, $id, "Unmatch");
+		}
 	}
 	else
 	{
 		$insert = $pdo->prepare("INSERT INTO likes (author, target) VALUES (?, ?)");
 		$insert->execute([$_SESSION["user"]["id"], $id]);
 		if ($hisLike)
+		{
 			$status = "matched";
+			createNotif($pdo, $id, "Match");
+		}
 		else
+		{
 			$status = "likes";
+			createNotif($pdo, $id, "Like");
+		}
 	}
 	updateFameScore($pdo, $id);
 	updateLastOnline($pdo);

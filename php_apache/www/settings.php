@@ -353,124 +353,127 @@
 			</div>
 		</main>
 		<?php require_once "/usr/local/bin/includes/footer.php" ?>
-	</body>
-	<script>
-		// Geolocation
-		const locCity = document.getElementById("location-city");
-		const locCountry = document.getElementById("location-country");
-		const loader = document.getElementsByClassName("loader")[0];
-		function locationFallback(error)
-		{
-			loader.classList.add("hidden");
-			const p = document.getElementsByClassName("geo-error")[0];
-			p.innerHTML = error;
-		}
-		function geolocation()
-		{
-			if (confirm("We'll be using the GPS of your device and browser to locate your coordinates. Proceed?"))
+		<script>
+			// Geolocation
+			const locCity = document.getElementById("location-city");
+			const locCountry = document.getElementById("location-country");
+			const loader = document.getElementsByClassName("loader")[0];
+			function locationFallback(error)
 			{
-				loader.classList.remove("hidden");
-				if (navigator.geolocation)
-				{
-					navigator.geolocation.getCurrentPosition(
-						function(position)
-						{
-							const lat = position.coords.latitude;
-							const lon = position.coords.longitude;
-							fetch("/api/geolocation.php", {
-								method: "POST",
-								headers: {"Content-Type": "application/json"},
-								body: JSON.stringify({
-									csrfToken: "<?= $_SESSION['csrfToken'] ?>",
-									lat: lat,
-									lon: lon,
-									id: <?= $_SESSION["user"]["id"] ?>
-								})
-							})
-								.then(res => res.json())
-								.then(data => {
-									if (!data.error)
-									{
-										locCity.value = data.city;
-										locCountry.value = data.country;
-										loader.classList.add("hidden");
-									}
-									else
-										locationFallback("Sorry, we couldn't locate you.");
-								});
-						},
-						function(error)
-						{ locationFallback("Error with geolocation: " + error.message + "."); }
-					);
-				}
-			else
-				locationFallback("Your browser or device is not handling geolocation.");
+				loader.classList.add("hidden");
+				const p = document.getElementsByClassName("geo-error")[0];
+				p.innerHTML = error;
 			}
-		}
-		const geoButton = document.getElementsByClassName("geo-button")[0];
-		geoButton.addEventListener("click", geolocation);
-		// Pictures
-		const fileInputs = document.getElementsByClassName("picture-input");
-		const uploadButtons = document.getElementsByClassName("picture-upload");
-		const previews = document.getElementsByClassName("picture-item");
-		for (let i = 0; i < 5; i++)
-		{
-			uploadButtons[i].addEventListener("click", () => { fileInputs[i].click(); });
-			fileInputs[i].addEventListener("change", function () {
-				const file = this.files[0];
-				if (!file)
+			function geolocation()
+			{
+				if (confirm("We'll be using the GPS of your device and browser to locate your coordinates. Proceed?"))
 				{
-					if (i == 0)
-						previews[i].innerHTML = `<img class="picture-preview" src="<?= htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">`;
-					else
-						previews[i].innerHTML = "";
-					return ;
-				}
-				const url = URL.createObjectURL(file);
-				if (i == 0)
-					previews[i].innerHTML = `<img class="picture-preview" src="${url}" alt="Preview">`;
+					loader.classList.remove("hidden");
+					if (navigator.geolocation)
+					{
+						navigator.geolocation.getCurrentPosition(
+							function(position)
+							{
+								const lat = position.coords.latitude;
+								const lon = position.coords.longitude;
+								fetch("/api/geolocation.php", {
+									method: "POST",
+									headers: {"Content-Type": "application/json"},
+									body: JSON.stringify({
+										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
+										lat: lat,
+										lon: lon,
+										id: <?= $_SESSION["user"]["id"] ?>
+									})
+								})
+									.then(res => res.json())
+									.then(data => {
+										if (!data.error)
+										{
+											locCity.value = data.city;
+											locCountry.value = data.country;
+											loader.classList.add("hidden");
+										}
+										else
+											locationFallback("Sorry, we couldn't locate you.");
+									})
+										.catch();
+							},
+							function(error)
+							{ locationFallback("Error with geolocation: " + error.message + "."); }
+						);
+					}
 				else
+					locationFallback("Your browser or device is not handling geolocation.");
+				}
+			}
+			const geoButton = document.getElementsByClassName("geo-button")[0];
+			geoButton.addEventListener("click", geolocation);
+			// Pictures
+			const fileInputs = document.getElementsByClassName("picture-input");
+			const uploadButtons = document.getElementsByClassName("picture-upload");
+			const previews = document.getElementsByClassName("picture-item");
+			for (let i = 0; i < 5; i++)
+			{
+				uploadButtons[i].addEventListener("click", () => { fileInputs[i].click(); });
+				fileInputs[i].addEventListener("change", function () {
+					const file = this.files[0];
+					if (!file)
+					{
+						if (i == 0)
+							previews[i].innerHTML = `<img class="picture-preview" src="<?= htmlspecialchars($_SESSION["profile"]["primaryPicture"]); ?>" alt="Profile picture">`;
+						else
+							previews[i].innerHTML = "";
+						return ;
+					}
+					const url = URL.createObjectURL(file);
+					if (i == 0)
+						previews[i].innerHTML = `<img class="picture-preview" src="${url}" alt="Preview">`;
+					else
+					{
+						previews[i].innerHTML = `
+							<img class="picture-preview" src="${url}" alt="Preview">
+							<div class="grid-items-overlay">
+								<button type="button"><i class="fa-solid fa-trash-can"></i></button>
+							</div>
+						`;
+						const newButton = previews[i].querySelector("button");
+						newButton.addEventListener("click", () => {
+							previews[i].innerHTML = "";
+						});
+					}
+				});
+				const deleteButton = previews[i].querySelector("button");
+				if (deleteButton)
 				{
-					previews[i].innerHTML = `
-						<img class="picture-preview" src="${url}" alt="Preview">
-						<div class="grid-items-overlay">
-							<button type="button"><i class="fa-solid fa-trash-can"></i></button>
-						</div>
-					`;
-					const newButton = previews[i].querySelector("button");
-					newButton.addEventListener("click", () => {
+					deleteButton.addEventListener("click", () => {
 						previews[i].innerHTML = "";
+						fetch("/api/delete.php", {
+							method: "POST",
+							headers: {"Content-Type": "application/x-www-form-urlencoded"},
+							body: new URLSearchParams({i: i, csrfToken: "<?= $_SESSION['csrfToken']?>"})
+						})
+							.catch();
 					});
 				}
-			});
-			const deleteButton = previews[i].querySelector("button");
-			if (deleteButton)
-			{
-				deleteButton.addEventListener("click", () => {
-					previews[i].innerHTML = "";
-					fetch("/api/delete.php", {
-						method: "POST",
-						headers: {"Content-Type": "application/x-www-form-urlencoded"},
-						body: new URLSearchParams({i: i, csrfToken: "<?= $_SESSION['csrfToken']?>"})
-					})
-				});
 			}
-		}
-		// Interests
-		const intButtons = document.getElementsByClassName("interest");
-		const hiddenInput = document.getElementsByClassName("interests-selected")[0];
-		let selected = <?= json_encode($_SESSION["profile"]["interests"] ?? []); ?>;
-		hiddenInput.value = JSON.stringify(selected);
-		Array.from(intButtons).forEach(button => {
-			button.addEventListener("click", () => {
-				const id = Number(button.dataset.interestId);
-				button.classList.toggle("selected");
-				if (selected.includes(id))
-					selected = selected.filter(item => item != id);
-				else
-					selected.push(id);
-				hiddenInput.value = JSON.stringify(selected);
+			// Interests
+			const intButtons = document.getElementsByClassName("interest");
+			const hiddenInput = document.getElementsByClassName("interests-selected")[0];
+			let selected = <?= json_encode($_SESSION["profile"]["interests"] ?? []); ?>;
+			hiddenInput.value = JSON.stringify(selected);
+			Array.from(intButtons).forEach(button => {
+				button.addEventListener("click", () => {
+					const id = Number(button.dataset.interestId);
+					button.classList.toggle("selected");
+					if (selected.includes(id))
+						selected = selected.filter(item => item != id);
+					else
+						selected.push(id);
+					hiddenInput.value = JSON.stringify(selected);
+				});
 			});
-		});
-	</script>
+		</script>
+		<?php require_once "/usr/local/bin/includes/notifJS.php" ?>
+	</body>
 </html>

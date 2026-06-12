@@ -89,7 +89,7 @@
 			<form action="login.php" method="POST">
 				<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
 				<input type="text" name="username" placeholder="Username" autocomplete="username" aria-label="Username" required>
-				<input type="password" name="password" placeholder="Password" autocomplete="password" aria-label="Password" required>
+				<input type="password" name="password" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
 				<?php if (isset($_SESSION["error"])): ?>
 				<div class="error-wrapper">
 					<p class="log error">

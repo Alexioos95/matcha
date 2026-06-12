@@ -1,0 +1,62 @@
+[
+	{
+		"id": 1,
+		"name": "Anime"
+	},
+	{
+		"id": 2,
+		"name": "Art"
+	},
+	{
+		"id": 3,
+		"name": "Cats"
+	},
+	{
+		"id": 4,
+		"name": "Coding"
+	},
+	{
+		"id": 5,
+		"name": "Coffee"
+	},
+	{
+		"id": 6,
+		"name": "Cooking"
+	},
+	{
+		"id": 7,
+		"name": "Fitness"
+	},
+	{
+		"id": 8,
+		"name": "Gaming"
+	},
+	{
+		"id": 9,
+		"name": "Geek"
+	},
+	{
+		"id": 10,
+		"name": "Movies"
+	},
+	{
+		"id": 11,
+		"name": "Music"
+	},
+	{
+		"id": 12,
+		"name": "Photography"
+	},
+	{
+		"id": 13,
+		"name": "Tattoos"
+	},
+	{
+		"id": 14,
+		"name": "Travel"
+	},
+	{
+		"id": 15,
+		"name": "Vegan"
+	}
+]

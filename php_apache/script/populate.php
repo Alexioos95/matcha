@@ -1,9 +1,14 @@
 <?php
 	require_once "/usr/local/bin/includes/db.php";
 
-	$data = json_decode(file_get_contents("/usr/local/bin/script/mixture.json"), true);
 	$users = json_decode(file_get_contents("/usr/local/bin/script/mixtures/users.json"), true);
 	$profiles = json_decode(file_get_contents("/usr/local/bin/script/mixtures/profiles.json"), true);
+	$interests = json_decode(file_get_contents("/usr/local/bin/script/mixtures/interests.json"), true);
+	$userInterests = json_decode(file_get_contents("/usr/local/bin/script/mixtures/userInterests.json"), true);
+	$likes = json_decode(file_get_contents("/usr/local/bin/script/mixtures/likes.json"), true);
+	$notifs = json_decode(file_get_contents("/usr/local/bin/script/mixtures/notifs.json"), true);
+	$visitHistory = json_decode(file_get_contents("/usr/local/bin/script/mixtures/visitHistory.json"), true);
+	$blocks = json_decode(file_get_contents("/usr/local/bin/script/mixtures/blocks.json"), true);
 
 	try
 	{
@@ -29,37 +34,44 @@
 
 		echo "Populating 'interests'...\n";
 		$reqInterests = $pdo->prepare("INSERT INTO interests (id, name) VALUES (?, ?)");
-		foreach ($data["interests"] as $i)
+		foreach ($interests as $i)
 		{
 			$reqInterests->execute([$i["id"], $i["name"]]);
 		}
 
 		echo "Populating 'userInterests'...\n";
 		$reqUserInterests = $pdo->prepare("INSERT INTO userInterests (user, interest) VALUES (?, ?)");
-		foreach ($data["userInterests"] as $ui)
+		foreach ($userInterests as $ui)
 		{
 			$reqUserInterests->execute([$ui["user"], $ui["interest"]]);
 		}
 
 		echo "Populating 'likes'...\n";
 		$reqLikes = $pdo->prepare("INSERT INTO likes (author, target) VALUES (?, ?)");
-		foreach ($data["likes"] as $l)
+		foreach ($likes as $l)
 		{
 			$reqLikes->execute([$l["author"], $l["target"]]);
 		}
 
 		echo "Populating 'blocks'...\n";
 		$reqBlocks = $pdo->prepare("INSERT INTO blocks (author, target) VALUES (?, ?)");
-		foreach ($data["blocks"] as $b)
+		foreach ($blocks as $b)
 		{
 			$reqBlocks->execute([$b["author"], $b["target"]]);
 		}
 
 		echo "Populating 'visitHistory'...\n";
 		$reqHistory = $pdo->prepare("INSERT INTO visitHistory (host, visitor) VALUES (?, ?)");
-		foreach ($data["visitHistory"] as $vh)
+		foreach ($visitHistory as $vh)
 		{
 			$reqHistory->execute([$vh["host"], $vh["visitor"]]);
+		}
+
+		echo "Populating 'notifs'...\n";
+		$reqNotifs = $pdo->prepare("INSERT INTO notifs (fromUser, toUser, type, isRead) VALUES (?, ?, ?, ?)");
+		foreach ($notifs as $n)
+		{
+			$reqNotifs->execute([$n["fromUser"], $n["toUser"], $n["type"], $n["isRead"]]);
 		}
 
 		$pdo->commit();

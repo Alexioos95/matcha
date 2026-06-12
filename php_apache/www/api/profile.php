@@ -6,10 +6,11 @@
 	$id = $_GET['id'] ?? null;
 	if (!$id || !is_numeric($id))
 		exit;
+	// Get row
 	$profileReq = $pdo->prepare("SELECT p.*, u.firstName, u.lastName, u.lastOnline FROM profiles p INNER JOIN users u ON p.author = u.id WHERE p.id = ?");
 	$profileReq->execute([$id]);
 	$row = $profileReq->fetch(PDO::FETCH_ASSOC);
-
+	// Online status
 	$birthDate = new DateTime($row["birthdate"]);
 	$today = new DateTime();
 	$age = $birthDate->diff($today)->y;
@@ -46,27 +47,28 @@
 		$time = floor($diff / 31536000);
 		$status = $time . ($time == 1 ? " year ago" : " years ago");
 	}
-
+	// Interests
 	$intReq = $pdo->prepare("SELECT * from interests");
 	$intReq->execute();
-
+	// User's interests
 	$uIntReq = $pdo->prepare("SELECT * FROM userInterests WHERE user = ?");
 	$uIntReq->execute([$id]);
 	$int = $intReq->fetchAll(PDO::FETCH_ASSOC);
-
+	// Match status
 	$myLikeReq = $pdo->prepare("SELECT * FROM likes WHERE author = ? AND target = ?");
 	$myLikeReq->execute([$_SESSION["user"]["id"], $id]);
 	$myLike = $myLikeReq->fetch(PDO::FETCH_ASSOC);
 	$hisLikeReq = $pdo->prepare("SELECT * FROM likes WHERE author = ? AND target = ?");
 	$hisLikeReq->execute([$id, $_SESSION["user"]["id"]]);
 	$hisLike = $hisLikeReq->fetch(PDO::FETCH_ASSOC);
-
+	// Visit history
 	$checkReq = $pdo->prepare("SELECT 1 FROM visitHistory WHERE host = ? AND visitor = ?");
 	$checkReq->execute([$id, $_SESSION["user"]["id"]]);
 	if (!$checkReq->fetch(PDO::FETCH_ASSOC))
 	{
 		$historyReq = $pdo->prepare("INSERT INTO visitHistory (host, visitor) VALUES (?, ?)");
 		$historyReq->execute([$id, $_SESSION["user"]["id"]]);
+		createNotif($pdo, $id, "Visit");
 		updateFameScore($pdo, $id);
 		updateLastOnline($pdo);
 	}

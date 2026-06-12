@@ -213,8 +213,8 @@
 						<label for="sorting"><i class="fa-solid fa-filter"></i> Sort by:</label>
 						<input class="sort-input" name="sort" type="hidden"></input>
 						<button type="button" id="sorting" class="sort-button interest <?= $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
-						<button type="button" class="sort-button interest <?= $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide"></i></span></button>
-						<button type="button" class="sort-button interest <?= $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short"></i></span></button>
+						<button type="button" class="sort-button interest <?= $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide label"></i></span></button>
+						<button type="button" class="sort-button interest <?= $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short label"></i></span></button>
 						<button type="button" class="sort-button interest <?= $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
 						<button type="button" class="sort-button interest <?= $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
 					</div>
@@ -377,7 +377,8 @@
 										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 										id: b.dataset.id
 									})
-								});
+								})
+									.catch();
 								modal.classList.add("hidden");
 								modal.innerHTML = "";
 								b.parentElement.remove();
@@ -439,7 +440,8 @@
 												setTimeout(() => {alert("You matched! You can now initiate a discussion.");}, 100);
 											}
 										}
-									});
+									})
+									.catch();
 							});
 							modalActions[2].addEventListener("click", () => {
 								if (confirm("You are about to report this user. Proceed?"))
@@ -451,7 +453,8 @@
 											csrfToken: "<?= $_SESSION['csrfToken'] ?>",
 											id: b.dataset.id
 										})
-									});
+									})
+										.catch();
 									modalActions[2].disabled = true;
 								}
 							});
@@ -466,7 +469,7 @@
 			// Infinite scrolling
 			let loading = false;
 			const container = document.getElementsByClassName("grid-container")[0];
-			const trigger = document.getElementsByClassName("load-trigger")[0];
+			const loadTrigger = document.getElementsByClassName("load-trigger")[0];
 			const observer = new IntersectionObserver(entries => {
 				if (entries[0].isIntersecting && !loading)
 				{
@@ -491,7 +494,8 @@
 						loading = false;
 				}
 			}, {});
-			observer.observe(trigger);
+			observer.observe(loadTrigger);
 		</script>
+		<?php require_once "/usr/local/bin/includes/notifJS.php" ?>
 	</body>
 </html>

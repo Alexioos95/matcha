@@ -320,7 +320,8 @@
 									}
 									else
 										locationFallback("Sorry, we couldn't locate you.");
-								});
+								})
+								.catch();
 						},
 						function(error)
 						{ locationFallback("Error with geolocation: " + error.message + "."); }
