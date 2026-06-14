@@ -234,7 +234,7 @@
 							<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 						</span>
 						<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) ?>"></img>
-						<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+						<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'] . ", " . $age)) ?></span>
 					</button>
 				</div>
 			<?php endwhile; ?>
@@ -404,6 +404,9 @@
 														<path d="M91 593 c-48 -24 -84 -83 -89 -148 -8 -96 60 -207 209 -340 95 -85 104 -90 131 -73 38 25 161 139 201 188 89 106 117 212 77 294 -26 55 -67 86 -120 93 -61 8 -106 -5 -146 -42 l-36 -35 -19 24 c-42 53 -141 72 -208 39z"/>
 													</g>
 												</svg>`;
+												const chatButton = document.getElementsByClassName("modal-chat-button")[0];
+												if (chatButton)
+													chatButton.remove();
 											}
 											if (data.status == "liked")
 											{
@@ -433,6 +436,7 @@
 												</svg>`;
 												const link = document.createElement("a");
 												link.href = "#";
+												link.classList.add("modal-chat-button");
 												const icon = document.createElement("i");
 												icon.classList.add("fa-solid", "fa-comments");
 												link.append(icon);
@@ -459,12 +463,27 @@
 								}
 							});
 						}
+						if (!location.hash)
+							location.hash = `${b.dataset.id}`;
 					});
+			}
+			function closemodal()
+			{
+				modal.classList.add("hidden");
+				modal.innerHTML = "";
+				history.replaceState(null, "", window.location.pathname);
 			}
 			const modal = document.getElementsByClassName("modal")[0];
 			modal.addEventListener("click", (e) => {
 				if (e.target === modal)
+					closemodal();
+			});
+			window.addEventListener("hashchange", () => {
+				if (!location.hash)
+				{
 					modal.classList.add("hidden");
+					modal.innerHTML = "";
+				}
 			});
 			// Infinite scrolling
 			let loading = false;

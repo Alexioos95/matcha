@@ -76,7 +76,10 @@
 
 <div class="modal-profile">
 	<div class="modal-header">
-		<h3><?= htmlspecialchars($row["firstName"] . " " . $row["lastName"]) ?><span class="label"><?= ", " . $age ?></span></h3>
+		<h3>
+			<span><?= htmlspecialchars(ucwords($row["firstName"] . " " . $row["lastName"])) ?><span class="label"><?= ", " . $age ?></span></span>
+			<button onclick="closemodal()" type="button"><i class="fa-solid fa-x"></i></button>
+		</h3>
 	</div>
 	<div class="modal-body">
 		<div class="modal-infos">

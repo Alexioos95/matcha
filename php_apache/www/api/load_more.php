@@ -218,7 +218,7 @@
 				<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 			</span>
 			<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . ' ' . $row['lastName']) ?>"></img>
-			<span class="overlay bottom"><?php echo htmlspecialchars($row['firstName'] . " " . $row['lastName']); echo $type == 'index' ? htmlspecialchars(", " . $age) : '' ?></span>
+			<span class="overlay bottom"><?php echo htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'])); echo $type == 'index' ? htmlspecialchars(", " . $age) : '' ?></span>
 		</button>
 	</div>
 <?php endwhile; ?>

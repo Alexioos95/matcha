@@ -154,7 +154,7 @@
 									<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 								</span>
 								<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?>">
-								<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+								<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'] . ", " . $age)) ?></span>
 							</button>
 						</div>
 					<?php endwhile ?>
@@ -181,7 +181,7 @@
 									<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 								</span>
 								<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?>">
-								<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+								<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'] . ", " . $age)) ?></span>
 							</button>
 						</div>
 					<?php endwhile ?>
@@ -208,7 +208,7 @@
 									<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 								</span>
 								<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?>">
-								<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+								<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'] . ", " . $age)) ?></span>
 							</button>
 						</div>
 					<?php endwhile ?>
@@ -234,7 +234,7 @@
 								<span class="label"><?= htmlspecialchars((int)$row['distance']) . "km" ?></span>
 							</span>
 							<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?>">
-							<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName'] . ", " . $age) ?></span>
+							<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'] . ", " . $age)) ?></span>
 						</button>
 					</div>
 				<?php endwhile ?>
@@ -247,7 +247,7 @@
 					<div class="grid-items">
 						<div>
 							<img src="<?= htmlspecialchars($row['primaryPicture']); ?>" alt="Primary picture of <?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?>">
-							<span class="overlay bottom"><?= htmlspecialchars($row['firstName'] . " " . $row['lastName']) ?></span>
+							<span class="overlay bottom"><?= htmlspecialchars(ucwords($row['firstName'] . " " . $row['lastName'])) ?></span>
 							<button class="unblock-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>" aria-label="Unblock this user" title="Unblock this user"><i class="fa-solid fa-xmark"></i></button>
 						</div>
 					</div>
@@ -342,12 +342,6 @@
 				});
 			});
 			// Modal for profile
-			const modal = document.getElementsByClassName("modal")[0];
-			const buttons = document.getElementsByClassName("modal-button");
-			modal.addEventListener("click", (e) => {
-				if (e.target === modal)
-					modal.classList.add("hidden");
-			});
 			function openmodal(b)
 			{
 				modal.classList.remove("hidden");
@@ -462,6 +456,7 @@
 												</svg>`;
 												const link = document.createElement("a");
 												link.href = "#";
+												link.classList.add("modal-chat-button");
 												const icon = document.createElement("i");
 												icon.classList.add("fa-solid", "fa-comments");
 												link.append(icon);
@@ -490,8 +485,29 @@
 								}
 							});
 						}
+						if (!location.hash)
+							location.hash = `${b.dataset.id}`;
 					});
 			}
+			function closemodal()
+			{
+				modal.classList.add("hidden");
+				modal.innerHTML = "";
+				history.replaceState(null, "", window.location.pathname);
+			}
+			const modal = document.getElementsByClassName("modal")[0];
+			const buttons = document.getElementsByClassName("modal-button");
+			modal.addEventListener("click", (e) => {
+				if (e.target === modal)
+					closemodal();
+			});
+			window.addEventListener("hashchange", () => {
+				if (!location.hash)
+				{
+					modal.classList.add("hidden");
+					modal.innerHTML = "";
+				}
+			});
 		</script>
 		<?php require_once "/usr/local/bin/includes/notifJS.php" ?>
 	</body>

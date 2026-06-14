@@ -54,7 +54,7 @@
 			}
 			// Count
 			const notifCount = document.getElementsByClassName("notif-count")[0];
-			const markAll = document.getElementsByClassName("notif-mark-all")[0];
+			const markAll = document.getElementsByClassName("notif-markall-button")[0];
 			async function updateNotif()
 			{
 				fetch("/api/notif_count.php")

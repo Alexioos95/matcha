@@ -81,8 +81,8 @@
 				<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
 				<input type="text" name="email" placeholder="Email" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="email" autocorrect="off" autocapitalize="off" aria-label="Email" required>
 				<input type="text" name="username" placeholder="Username" value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="username" autocorrect="off" autocapitalize="off" aria-label="Username" required>
-				<input type="text" name="firstName" placeholder="First name" value="<?= htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="given-name" autocorrect="off" autocapitalize="off" aria-label="first name" required>
-				<input type="text" name="lastName" placeholder="Last name" value="<?= htmlspecialchars($lastName, ENT_QUOTES, 'UTF-8'); ?>" autocomplete="family-name" autocorrect="off" autocapitalize="off" aria-label="last name" required>
+				<input type="text" name="firstName" placeholder="First name" value="<?= htmlspecialchars(ucwords($firstName), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="given-name" autocorrect="off" autocapitalize="off" aria-label="first name" required>
+				<input type="text" name="lastName" placeholder="Last name" value="<?= htmlspecialchars(ucwords($lastName), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="family-name" autocorrect="off" autocapitalize="off" aria-label="last name" required>
 				<input type="password" name="password" placeholder="Password" autocomplete="new-password" aria-label="Password" required>
 				<input type="password" name="confirm" placeholder="Confirm password" autocomplete="new-password" aria-label="Confirm password" required>
 				<?php if (isset($_SESSION["error"])): ?>

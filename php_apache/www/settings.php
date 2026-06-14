@@ -266,8 +266,8 @@
 						<input type="hidden" name="csrfToken" value="<?= $_SESSION['csrfToken']; ?>">
 						<input type="email" name="email" placeholder="<?= htmlspecialchars($_SESSION['user']['email'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Email">
 						<input type="text" name="username" placeholder="<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-username" aria-label="Username">
-						<input type="text" name="firstName" placeholder="<?= htmlspecialchars($_SESSION['user']['firstName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-firstName" aria-label="First name">
-						<input type="text" name="lastName" placeholder="<?= htmlspecialchars($_SESSION['user']['lastName'], ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-lastName" aria-label="Last name">
+						<input type="text" name="firstName" placeholder="<?= htmlspecialchars(ucwords($_SESSION['user']['firstName']), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-firstName" aria-label="First name">
+						<input type="text" name="lastName" placeholder="<?= htmlspecialchars(ucwords($_SESSION['user']['lastName']), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="new-lastName" aria-label="Last name">
 						<input type="password" name="password" placeholder="Password" autocomplete="new-password" aria-label="Password">
 						<button type="submit" name="submit_account">Submit</button>
 					</form>
