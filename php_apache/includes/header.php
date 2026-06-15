@@ -11,8 +11,8 @@
 						<button class="notif-trigger" type="button"><span class="notif-count hidden">0</span><i class="fa-solid fa-bell"></i></button>
 						<div class="notif-wrapper hidden">
 							<div class="notif-wrapper-header">
+								<span>Notifications</span>
 								<button class="notif-markall-button" onclick="markAsRead(this)" type="button" data-id="all">
-									<span>Notifications</span>
 									<span class="active"><i class="fa-solid fa-check"></i> Mark all as read</span>
 								</button>
 							</div>

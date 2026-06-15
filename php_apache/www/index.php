@@ -151,80 +151,86 @@
 		<?php require_once "/usr/local/bin/includes/header.php" ?>
 		<main>
 			<div class="grid-container">
-				<form method="GET">
-					<div class="filter-container">
-						<div class="filter-wrapper">
-							<div class="filter-range-wrapper">
-								<div class="search-range">
-									<label for="age-slider">Age</label>
-									<div class="drange">
-										<input class="sliders-min" id="age-slider" name="ageMin" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[0]) ?>" aria-label="Minimum age for filter">
-										<input class="sliders-max" name="ageMax" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[1]) ?>" aria-label="Maximum age for filter">
-										<div class="dmin"><?= htmlspecialchars($filters[0]) ?></div>
-										<div class="dmax"><?= htmlspecialchars($filters[1]) ?></div>
+				<div class="grid-option-container">
+					<button class="option-trigger" title="Filter and sort options">
+						<i class="fa-solid fa-sliders"></i>
+						<span>Filter and sort options</span>
+					</button>
+					<form class="option-form hidden" method="GET">
+						<div class="filter-container">
+							<div class="filter-wrapper">
+								<div class="filter-range-wrapper">
+									<div class="search-range">
+										<label for="age-slider">Age</label>
+										<div class="drange">
+											<input class="sliders-min" id="age-slider" name="ageMin" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[0]) ?>" aria-label="Minimum age for filter">
+											<input class="sliders-max" name="ageMax" type="range" min="<?= htmlspecialchars($filterPh['minAge']) ?>" max="<?= htmlspecialchars($filterPh['maxAge']) ?>" value="<?= htmlspecialchars($filters[1]) ?>" aria-label="Maximum age for filter">
+											<div class="dmin"><?= htmlspecialchars($filters[0]) ?></div>
+											<div class="dmax"><?= htmlspecialchars($filters[1]) ?></div>
+										</div>
+									</div>
+									<div class="search-range">
+										<label for="distance-slider">Distance</label>
+										<div class="drange">
+											<input class="sliders-min" id="distance-slider" name="distMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[2]) ?>" aria-label="Minimum distance for filter">
+											<input class="sliders-max" name="distMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[3]) ?>" aria-label="Maximum distance for filter">
+											<div class="dmin"><?= htmlspecialchars((int)$filters[2]) ?></div>
+											<div class="dmax"><?= htmlspecialchars((int)$filters[3]) ?></div>
+										</div>
+									</div>
+									<div class="search-range">
+										<label for="fame-slider">Fame</label>
+										<div class="drange">
+											<input class="sliders-min" id="fame-slider" name="fameMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[4]) ?>" aria-label="Minimum fame for filter">
+											<input class="sliders-max" name="fameMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[5]) ?>" aria-label="Maximum fame for filter">
+											<div class="dmin"><?= htmlspecialchars($filters[4]) ?></div>
+											<div class="dmax"><?= htmlspecialchars($filters[5]) ?></div>
+										</div>
 									</div>
 								</div>
-								<div class="search-range">
-									<label for="distance-slider">Distance</label>
-									<div class="drange">
-										<input class="sliders-min" id="distance-slider" name="distMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[2]) ?>" aria-label="Minimum distance for filter">
-										<input class="sliders-max" name="distMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minDist']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxDist'] + 1) ?>" value="<?= htmlspecialchars($filters[3]) ?>" aria-label="Maximum distance for filter">
-										<div class="dmin"><?= htmlspecialchars((int)$filters[2]) ?></div>
-										<div class="dmax"><?= htmlspecialchars((int)$filters[3]) ?></div>
-									</div>
-								</div>
-								<div class="search-range">
-									<label for="fame-slider">Fame</label>
-									<div class="drange">
-										<input class="sliders-min" id="fame-slider" name="fameMin" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[4]) ?>" aria-label="Minimum fame for filter">
-										<input class="sliders-max" name="fameMax" type="range" min="<?= htmlspecialchars((int)$filterPh['minFame']) ?>" max="<?= htmlspecialchars((int)$filterPh['maxFame'] + 1) ?>" value="<?= htmlspecialchars($filters[5]) ?>" aria-label="Maximum fame for filter">
-										<div class="dmin"><?= htmlspecialchars($filters[4]) ?></div>
-										<div class="dmax"><?= htmlspecialchars($filters[5]) ?></div>
-									</div>
+								<div class="filter-select-wrapper">
+									<select class="filter-select" name="int1" aria-label="Select an interest to filter">
+										<option value="">Select an interest</option>
+										<?php foreach ($ints as $int): ?>
+										<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[6] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
+										<?php endforeach; ?>
+									</select>
+									<select class="filter-select hidden" name="int2" aria-label="Select an interest to filter">
+										<option value="">Select an interest</option>
+										<?php foreach ($ints as $int): ?>
+										<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[7] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
+										<?php endforeach; ?>
+									</select>
+									<select class="filter-select hidden" name="int3" aria-label="Select an interest to filter">
+										<option value="">Select an interest</option>
+										<?php foreach ($ints as $int): ?>
+										<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[8] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
+										<?php endforeach; ?>
+									</select>
 								</div>
 							</div>
-							<div class="filter-select-wrapper">
-								<select class="filter-select" name="int1" aria-label="Select an interest to filter">
-									<option value="">Select an interest</option>
-									<?php foreach ($ints as $int): ?>
-									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[6] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<select class="filter-select hidden" name="int2" aria-label="Select an interest to filter">
-									<option value="">Select an interest</option>
-									<?php foreach ($ints as $int): ?>
-									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[7] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<select class="filter-select hidden" name="int3" aria-label="Select an interest to filter">
-									<option value="">Select an interest</option>
-									<?php foreach ($ints as $int): ?>
-									<option value="<?= $int['id']; ?>" <?= $int["id"] == $filters[8] ? "selected" : ""; ?>><?= htmlspecialchars($int["name"]); ?></option>
-									<?php endforeach; ?>
-								</select>
+							<div class="filter-button-wrapper">
+								<button class="reset-search" type="button">Reset filters</button>
+								<button class="submit-search" type="submit">Apply filters</button>
 							</div>
 						</div>
-						<div class="filter-button-wrapper">
-							<button class="reset-search" type="button">Reset filters</button>
-							<button class="submit-search" type="submit">Apply filters</button>
+						<div class="sort-wrapper">
+							<label for="sorting"><i class="fa-solid fa-filter"></i> Sort by:</label>
+							<input class="sort-input" name="sort" type="hidden"></input>
+							<button type="button" id="sorting" class="sort-button interest <?= $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
+							<button type="button" class="sort-button interest <?= $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide label"></i></span></button>
+							<button type="button" class="sort-button interest <?= $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short label"></i></span></button>
+							<button type="button" class="sort-button interest <?= $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
+							<button type="button" class="sort-button interest <?= $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
 						</div>
-					</div>
-					<div class="sort-wrapper">
-						<label for="sorting"><i class="fa-solid fa-filter"></i> Sort by:</label>
-						<input class="sort-input" name="sort" type="hidden"></input>
-						<button type="button" id="sorting" class="sort-button interest <?= $sort == 'dist' || $sort == null ? 'selected' : '' ?>" data-value="dist"><i class="fa-solid fa-earth-americas"></i> Distance</button>
-						<button type="button" class="sort-button interest <?= $sort == 'age-asc' ? 'selected' : '' ?>" data-value="age-asc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-short-wide label"></i></span></button>
-						<button type="button" class="sort-button interest <?= $sort == 'age-desc' ? 'selected' : '' ?>" data-value="age-desc"><i class="fa-solid fa-cake-candles"></i> <span>Age <i class="fa-solid fa-arrow-down-wide-short label"></i></span></button>
-						<button type="button" class="sort-button interest <?= $sort == 'tags' ? 'selected' : '' ?>" data-value="tags"><i class="fa-solid fa-tags"></i> Shared interest</button>
-						<button type="button" class="sort-button interest <?= $sort == 'fame' ? 'selected' : '' ?>" data-value="fame"><i class="fa-solid fa-star"></i> Fame</button>
-					</div>
-				</form>
+					</form>
+				</div>
 			<?php while ($row = $req->fetch(PDO::FETCH_ASSOC)): ?>
 				<?php
 					$birthDate = new DateTime($row["birthdate"]);
 					$age = $birthDate->diff($today)->y;
 				?>
-				<div class="grid-items">
+				<div class="grid-items grid-index">
 					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>">
 						<span class="overlay top">
 							<span class="label">
@@ -244,8 +250,13 @@
 		<?php require_once "/usr/local/bin/includes/footer.php" ?>
 		<script>
 			// Advanced search
+			const formTrigger = document.getElementsByClassName("option-trigger")[0];
+			const form = document.getElementsByClassName("option-form")[0];
 			const submitSearch = document.getElementsByClassName("submit-search")[0];
 			const sortInput = document.getElementsByClassName("sort-input")[0];
+			formTrigger.addEventListener("click", () => { form.classList.toggle("hidden"); });
+			if (new URLSearchParams(window.location.search).toString() !== "")
+				form.classList.remove("hidden");
 			// Advanced search - Sliders
 			const slidersMin = document.getElementsByClassName("sliders-min");
 			const slidersMax = document.getElementsByClassName("sliders-max");
@@ -326,18 +337,7 @@
 			updateOptions();
 			// Advanced search - Reset
 			const resetButton = document.getElementsByClassName("reset-search")[0];
-			resetButton.addEventListener("click", () => {
-				slidersMin[0].value = <?= $defaults[0] ?>;
-				slidersMax[0].value = <?= $defaults[1] ?>;
-				slidersMin[1].value = <?= $defaults[2] ?>;
-				slidersMax[1].value = <?= $defaults[3] ?>;
-				slidersMin[2].value = <?= $defaults[4] ?>;
-				slidersMax[2].value = <?= $defaults[5] ?>;
-				selects[0].value = "";
-				selects[1].value = "";
-				selects[2].value = "";
-				submitSearch.click();
-			});
+			resetButton.addEventListener("click", () => { window.location.href = "/"; });
 			// Modal for profile
 			function openmodal(b)
 			{
@@ -412,7 +412,7 @@
 											{
 												modalActions[1].innerHTML = `
 												<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="64.000000pt" height="64.000000pt" viewBox="0 0 64.000000 64.000000" preserveAspectRatio="xMidYMid meet">
-													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="white" stroke="none">
+													<g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)" fill="rgb(214, 46, 46)" stroke="none">
 														<path d="M91 593 c-18 -9 -45 -35 -60 -57 -22 -33 -26 -51 -26 -105 1 -104 54 -188 200 -320 101 -91 110 -97 137 -78 40 26 150 128 196 181 59 68 102 159 102 215 0 56 -32 124 -71 152 -63 44 -158 37 -215 -16 l-36 -35 -19 24 c-42 53 -141 72 -208 39z m455 -64 c33 -31 48 -89 35 -137 -20 -71 -125 -208 -204 -264 l-28 -20 3 190 c3 187 3 191 28 217 14 15 34 31 45 36 32 14 95 3 121 -22z"/>
 													</g>
 												</svg>`;
