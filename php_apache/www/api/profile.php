@@ -188,7 +188,7 @@
 			</button>
 			<?php endif; ?>
 			<?php if ($myLike && $hisLike): ?>
-			<a href="#"><i class="fa-solid fa-comments"></i></a>
+			<a href="/chat.php?user=<?= htmlspecialchars($row['author']) ?>" class="modal-chat-button" title="Chat with this user"><i class="fa-solid fa-comments"></i></a>
 			<?php endif; ?>
 			<button title="Report this user"><i class="fa-solid fa-exclamation"></i></button>
 		</div>

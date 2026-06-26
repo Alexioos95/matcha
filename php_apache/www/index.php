@@ -231,7 +231,7 @@
 					$age = $birthDate->diff($today)->y;
 				?>
 				<div class="grid-items grid-index">
-					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>">
+					<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>" data-userid="<?= htmlspecialchars($row['author']); ?>">
 						<span class="overlay top">
 							<span class="label">
 								<i class="fa-solid fa-star label"></i>
@@ -435,7 +435,7 @@
 													</g>
 												</svg>`;
 												const link = document.createElement("a");
-												link.href = "#";
+												link.href = `/chat.php?user=${b.dataset.userid}`;
 												link.classList.add("modal-chat-button");
 												const icon = document.createElement("i");
 												icon.classList.add("fa-solid", "fa-comments");

@@ -209,7 +209,7 @@
 <?php while ($row = $req->fetch(PDO::FETCH_ASSOC)): ?>
 <?php $birthDate = new DateTime($row["birthdate"]); $age = $birthDate->diff($today)->y; ?>
 	<div class="grid-items">
-		<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>">
+		<button onclick="openmodal(this)" class="modal-button" type="button" data-id="<?= htmlspecialchars($row['id']); ?>" data-userid="<?= htmlspecialchars($row['author']); ?>">
 			<span class="overlay top">
 				<span class="label">
 					<i class="fa-solid fa-star label"></i>
