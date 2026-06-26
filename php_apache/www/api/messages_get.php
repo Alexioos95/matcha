@@ -23,15 +23,7 @@
 
 	$myId = $_SESSION["user"]["id"];
 
-	$matchReq = $pdo->prepare("
-		SELECT COUNT(*) FROM likes l1
-		INNER JOIN likes l2 ON l2.author = :them AND l2.target = :me
-		WHERE l1.author = :me AND l1.target = :them
-	");
-	$matchReq->bindValue(":me",   $myId,    PDO::PARAM_INT);
-	$matchReq->bindValue(":them", $withUser, PDO::PARAM_INT);
-	$matchReq->execute();
-	if ((int)$matchReq->fetchColumn() === 0)
+	if (!isMutualMatch($pdo, $myId, $withUser))
 	{
 		echo json_encode(["error" => "You are not matched with this user."]);
 		exit;

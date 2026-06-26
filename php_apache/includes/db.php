@@ -98,4 +98,16 @@
 		$notif = $pdo->prepare("INSERT INTO notifs (fromUser, toUser, type) VALUES (?, ?, ?)");
 		$notif->execute([$_SESSION["user"]["id"], $id, $type]);
 	}
+	function isMutualMatch($pdo, $me, $them)
+	{
+		$req = $pdo->prepare("
+			SELECT COUNT(*) FROM likes l1
+			INNER JOIN likes l2 ON l2.author = :them AND l2.target = :me
+			WHERE l1.author = :me AND l1.target = :them
+		");
+		$req->bindValue(":me",   $me,   PDO::PARAM_INT);
+		$req->bindValue(":them", $them, PDO::PARAM_INT);
+		$req->execute();
+		return ((int)$req->fetchColumn() > 0);
+	}
 ?>

@@ -1011,10 +1011,6 @@ footer {
 	box-shadow: inset 3px 0 0 var(--activeColor);
 }
 
-.chat-sidebar-item.active .chat-sidebar-preview {
-	display: none;
-}
-
 .chat-sidebar-item.active:hover {
 	background: rgb(62, 68, 75);
 }
@@ -1038,15 +1034,6 @@ footer {
 	font-size: 0.9rem;
 	font-weight: 600;
 	color: var(--textColor);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.chat-sidebar-preview {
-	font-size: 0.78rem;
-	color: var(--textColor);
-	opacity: 0.55;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;

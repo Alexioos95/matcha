@@ -19,14 +19,6 @@
 			u.lastName,
 			p.primaryPicture,
 			(
-				SELECT content
-				FROM messages
-				WHERE (fromUser = :me AND toUser = u.id)
-				   OR (fromUser = u.id AND toUser = :me)
-				ORDER BY id DESC
-				LIMIT 1
-			) AS lastMessage,
-			(
 				SELECT createdAt
 				FROM messages
 				WHERE (fromUser = :me AND toUser = u.id)
@@ -51,9 +43,7 @@
 			"id"             => (int)$row["id"],
 			"firstName"      => $row["firstName"],
 			"lastName"       => $row["lastName"],
-			"primaryPicture" => $row["primaryPicture"],
-			"lastMessage"    => $row["lastMessage"],
-			"lastMessageAt"  => $row["lastMessageAt"]
+			"primaryPicture" => $row["primaryPicture"]
 		];
 	}
 

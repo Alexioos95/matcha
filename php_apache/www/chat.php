@@ -9,19 +9,10 @@
 	$targetId = isset($_GET["user"]) && is_numeric($_GET["user"]) ? (int)$_GET["user"] : null;
 
 	$match = null;
-	if ($targetId !== null)
+	if ($targetId !== null && isMutualMatch($pdo, $_SESSION["user"]["id"], $targetId))
 	{
-		$req = $pdo->prepare("
-			SELECT u.id, u.firstName, u.lastName, p.primaryPicture
-			FROM profiles p
-			INNER JOIN users u ON p.author = u.id
-			INNER JOIN likes l1 ON l1.author = :me    AND l1.target = u.id
-			INNER JOIN likes l2 ON l2.author = u.id   AND l2.target = :me
-			WHERE u.id = :target
-		");
-		$req->bindValue(":me",     $_SESSION["user"]["id"], PDO::PARAM_INT);
-		$req->bindValue(":target", $targetId,               PDO::PARAM_INT);
-		$req->execute();
+		$req = $pdo->prepare("SELECT id, firstName, lastName FROM users WHERE id = ?");
+		$req->execute([$targetId]);
 		$result = $req->fetch(PDO::FETCH_ASSOC);
 		if ($result !== false)
 			$match = $result;
@@ -126,12 +117,7 @@
 						nameEl.className = "chat-sidebar-name";
 						nameEl.textContent = m.firstName + " " + m.lastName;
 
-						const preview = document.createElement("span");
-						preview.className = "chat-sidebar-preview";
-						preview.textContent = m.lastMessage || "Start chatting!";
-
 						info.appendChild(nameEl);
-						info.appendChild(preview);
 						item.appendChild(avatar);
 						item.appendChild(info);
 
