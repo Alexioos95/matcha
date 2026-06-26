@@ -28,6 +28,11 @@
 		echo json_encode(["error" => "You are not matched with this user."]);
 		exit;
 	}
+	if (isBlocked($pdo, $myId, $withUser))
+	{
+		echo json_encode(["error" => "You cannot message this user."]);
+		exit;
+	}
 
 	$req = $pdo->prepare("
 		SELECT id, fromUser, content, createdAt

@@ -50,6 +50,11 @@
 		echo json_encode(["error" => "You are not matched with this user."]);
 		exit;
 	}
+	if (isBlocked($pdo, $myId, $toUser))
+	{
+		echo json_encode(["error" => "You cannot message this user."]);
+		exit;
+	}
 
 	$insertReq = $pdo->prepare("INSERT INTO messages (fromUser, toUser, content) VALUES (?, ?, ?)");
 	$insertReq->execute([$myId, $toUser, $content]);

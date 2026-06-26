@@ -23,6 +23,11 @@
 		INNER JOIN likes l1 ON l1.author = :me  AND l1.target = u.id
 		INNER JOIN likes l2 ON l2.author = u.id AND l2.target = :me
 		WHERE u.id != :me
+		AND NOT EXISTS (
+			SELECT 1 FROM blocks
+			WHERE (author = :me AND target = u.id)
+			   OR (author = u.id AND target = :me)
+		)
 		ORDER BY (
 			SELECT createdAt
 			FROM messages

@@ -110,4 +110,17 @@
 		$req->execute();
 		return ((int)$req->fetchColumn() > 0);
 	}
+	function isBlocked($pdo, $me, $them)
+	{
+		$req = $pdo->prepare("
+			SELECT 1 FROM blocks
+			WHERE (author = :me AND target = :them)
+			   OR (author = :them AND target = :me)
+			LIMIT 1
+		");
+		$req->bindValue(":me",   $me,   PDO::PARAM_INT);
+		$req->bindValue(":them", $them, PDO::PARAM_INT);
+		$req->execute();
+		return ($req->fetch() !== false);
+	}
 ?>
