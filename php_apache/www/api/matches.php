@@ -17,21 +17,20 @@
 			u.id,
 			u.firstName,
 			u.lastName,
-			p.primaryPicture,
-			(
-				SELECT createdAt
-				FROM messages
-				WHERE (fromUser = :me AND toUser = u.id)
-				   OR (fromUser = u.id AND toUser = :me)
-				ORDER BY id DESC
-				LIMIT 1
-			) AS lastMessageAt
+			p.primaryPicture
 		FROM users u
 		INNER JOIN profiles p ON p.author = u.id
 		INNER JOIN likes l1 ON l1.author = :me  AND l1.target = u.id
 		INNER JOIN likes l2 ON l2.author = u.id AND l2.target = :me
 		WHERE u.id != :me
-		ORDER BY lastMessageAt DESC, u.firstName ASC
+		ORDER BY (
+			SELECT createdAt
+			FROM messages
+			WHERE (fromUser = :me AND toUser = u.id)
+			   OR (fromUser = u.id AND toUser = :me)
+			ORDER BY id DESC
+			LIMIT 1
+		) DESC, u.firstName ASC
 	");
 	$req->bindValue(":me", $myId, PDO::PARAM_INT);
 	$req->execute();
