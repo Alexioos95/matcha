@@ -6,6 +6,7 @@
 	requireProfile();
 	updateLastOnline($pdo);
 	// Today
+	date_default_timezone_set("Europe/Paris");
 	$today = new DateTime();
 	// Parameters - Filters
 	$filters = [
@@ -389,7 +390,7 @@
 									headers: {"Content-Type": "application/json"},
 									body: JSON.stringify({
 										csrfToken: "<?= $_SESSION['csrfToken'] ?>",
-										id: b.dataset.id
+										id: b.dataset.userid
 									})
 								})
 									.then(res => res.json())
@@ -455,7 +456,7 @@
 										headers: {"Content-Type": "application/json"},
 										body: JSON.stringify({
 											csrfToken: "<?= $_SESSION['csrfToken'] ?>",
-											id: b.dataset.id
+											id: b.dataset.userid
 										})
 									})
 										.catch();

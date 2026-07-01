@@ -202,6 +202,7 @@
 	}
 	$req->bindValue(":offset", $offset, PDO::PARAM_INT);
 	$req->execute();
+	date_default_timezone_set("Europe/Paris");
 	$today = new DateTime();
 	updateLastOnline($pdo);
 ?>

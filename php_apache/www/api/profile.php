@@ -11,6 +11,7 @@
 	$profileReq->execute([$id]);
 	$row = $profileReq->fetch(PDO::FETCH_ASSOC);
 	// Online status
+	date_default_timezone_set("Europe/Paris");
 	$birthDate = new DateTime($row["birthdate"]);
 	$today = new DateTime();
 	$age = $birthDate->diff($today)->y;
@@ -56,20 +57,20 @@
 	$int = $intReq->fetchAll(PDO::FETCH_ASSOC);
 	// Match status
 	$myLikeReq = $pdo->prepare("SELECT * FROM likes WHERE author = ? AND target = ?");
-	$myLikeReq->execute([$_SESSION["user"]["id"], $id]);
+	$myLikeReq->execute([$_SESSION["user"]["id"], $row["author"]]);
 	$myLike = $myLikeReq->fetch(PDO::FETCH_ASSOC);
 	$hisLikeReq = $pdo->prepare("SELECT * FROM likes WHERE author = ? AND target = ?");
-	$hisLikeReq->execute([$id, $_SESSION["user"]["id"]]);
+	$hisLikeReq->execute([$row["author"], $_SESSION["user"]["id"]]);
 	$hisLike = $hisLikeReq->fetch(PDO::FETCH_ASSOC);
 	// Visit history
 	$checkReq = $pdo->prepare("SELECT 1 FROM visitHistory WHERE host = ? AND visitor = ?");
-	$checkReq->execute([$id, $_SESSION["user"]["id"]]);
+	$checkReq->execute([$row["author"], $_SESSION["user"]["id"]]);
 	if (!$checkReq->fetch(PDO::FETCH_ASSOC))
 	{
 		$historyReq = $pdo->prepare("INSERT INTO visitHistory (host, visitor) VALUES (?, ?)");
-		$historyReq->execute([$id, $_SESSION["user"]["id"]]);
-		createNotif($pdo, $id, "Visit");
-		updateFameScore($pdo, $id);
+		$historyReq->execute([$row["author"], $_SESSION["user"]["id"]]);
+		createNotif($pdo, $row["author"], "Visit");
+		updateFameScore($pdo, $row["author"]);
 		updateLastOnline($pdo);
 	}
 ?>

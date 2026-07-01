@@ -48,7 +48,7 @@
 						</div>
 						<div class="chat-panel-body" id="chat-panel-body">
 							<?php if ($match === null): ?>
-							<span class="chat-empty">Pick a conversation from the list on the left.</span>
+							<span class="chat-empty">Pick a conversation from the list.</span>
 							<?php endif; ?>
 						</div>
 						<div class="chat-panel-footer" id="chat-panel-footer" <?= $match === null ? 'style="display:none"' : '' ?>>

@@ -84,6 +84,8 @@
 	}
 	function updateLastOnline($pdo)
 	{
+
+		date_default_timezone_set("Europe/Paris");
 		$now = time();
 		if (!isset($_SESSION["user"]["lastOnline"]) || $now - strtotime($_SESSION["user"]["lastOnline"]) > 300)
 		{
