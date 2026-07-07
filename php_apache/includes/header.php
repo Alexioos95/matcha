@@ -7,6 +7,8 @@
 					<li><div class="separator"></div></li>
 					<li title="Connections"><a href="/connections.php"><i class="fa-solid fa-people-arrows"></i></a></li>
 					<li><div class="separator"></div></li>
+					<li title="Chat"><a href="/chat.php"><i class="fa-solid fa-comments"></i></a></li>
+					<li><div class="separator"></div></li>
 					<li title="Notifications">
 						<button class="notif-trigger" type="button"><span class="notif-count hidden">0</span><i class="fa-solid fa-bell"></i></button>
 						<div class="notif-wrapper hidden">

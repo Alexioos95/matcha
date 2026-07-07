@@ -286,7 +286,7 @@
 						<div class="form-group">
 							<label for="preference">Sexual Preferences</label>
 							<select id="preference" name="preference" required>
-								<option value="men" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'men') echo 'selected'; ?>>Men</option>
+								<option value="male" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'male') echo 'selected'; ?>>Men</option>
 								<option value="female" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'female') echo 'selected'; ?>>Women</option>
 								<option value="either" <?php if (isset($_SESSION['profile']['preference']) && $_SESSION['profile']['preference'] === 'either') echo 'selected'; ?>>Either</option>
 							</select>
@@ -440,6 +440,7 @@
 						const newButton = previews[i].querySelector("button");
 						newButton.addEventListener("click", () => {
 							previews[i].innerHTML = "";
+							fileInputs[i].value = "";
 						});
 					}
 				});

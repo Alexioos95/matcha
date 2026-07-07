@@ -12,6 +12,7 @@ services:
         volumes:
             - ./php_apache/www:/var/www/html:z
             - ./php_apache/includes:/usr/local/bin/includes:z
+            - uploads_data:/var/www/html/uploads
         depends_on:
             - mysql
 
@@ -40,4 +41,5 @@ services:
             - mysql_db:/var/lib/mysql
 
 volumes:
+    uploads_data:
     mysql_db:

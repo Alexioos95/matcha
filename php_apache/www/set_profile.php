@@ -374,6 +374,7 @@
 				const newButton = previews[i].querySelector("button");
 				newButton.addEventListener("click", () => {
 					previews[i].innerHTML = "";
+					fileInputs[i].value = "";
 					if (i == 0)
 						secondary.classList.add("hidden");
 				});

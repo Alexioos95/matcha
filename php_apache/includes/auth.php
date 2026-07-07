@@ -23,8 +23,8 @@
 			$_SESSION["csrfToken"] = bin2hex(random_bytes(32));
 			$newToken = bin2hex(random_bytes(64));
 			$newHashedToken = hash("sha256", $newToken);
-			$newTime = time() + 60 * 60 * 24;
 			date_default_timezone_set("Europe/Paris");
+			$newTime = time() + 60 * 60 * 24;
 			$newDate = date("Y-m-d H:i:s", $newTime);
 			$now = date("Y-m-d H:i:s");
 			$update = $pdo->prepare("UPDATE users SET cookieToken = ?, cookieExpires = ?, lastOnline = ? WHERE id = ?");

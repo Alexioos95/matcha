@@ -84,6 +84,8 @@
 	}
 	function updateLastOnline($pdo)
 	{
+
+		date_default_timezone_set("Europe/Paris");
 		$now = time();
 		if (!isset($_SESSION["user"]["lastOnline"]) || $now - strtotime($_SESSION["user"]["lastOnline"]) > 300)
 		{
@@ -97,5 +99,30 @@
 	{
 		$notif = $pdo->prepare("INSERT INTO notifs (fromUser, toUser, type) VALUES (?, ?, ?)");
 		$notif->execute([$_SESSION["user"]["id"], $id, $type]);
+	}
+	function isMutualMatch($pdo, $me, $them)
+	{
+		$req = $pdo->prepare("
+			SELECT COUNT(*) FROM likes l1
+			INNER JOIN likes l2 ON l2.author = :them AND l2.target = :me
+			WHERE l1.author = :me AND l1.target = :them
+		");
+		$req->bindValue(":me",   $me,   PDO::PARAM_INT);
+		$req->bindValue(":them", $them, PDO::PARAM_INT);
+		$req->execute();
+		return ((int)$req->fetchColumn() > 0);
+	}
+	function isBlocked($pdo, $me, $them)
+	{
+		$req = $pdo->prepare("
+			SELECT 1 FROM blocks
+			WHERE (author = :me AND target = :them)
+			   OR (author = :them AND target = :me)
+			LIMIT 1
+		");
+		$req->bindValue(":me",   $me,   PDO::PARAM_INT);
+		$req->bindValue(":them", $them, PDO::PARAM_INT);
+		$req->execute();
+		return ($req->fetch() !== false);
 	}
 ?>

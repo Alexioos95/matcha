@@ -13,6 +13,7 @@
 	if ($req->rowCount() <= 0)
 		exit("Invalid link.");
 	$user = $req->fetch(PDO::FETCH_ASSOC);
+	date_default_timezone_set("Europe/Paris");
 	if (!$user)
 		exit("Sorry, a problem occured on our side. Try again later.");
 	elseif (strtotime($user["verifCodeExpires"]) < time())

@@ -48,6 +48,7 @@
 			$user = $req->fetch(PDO::FETCH_ASSOC);
 			if (!$user)
 				exit("Sorry, a problem occured on our side. Try again later.");
+			date_default_timezone_set("Europe/Paris");
 			if (strtotime($user["verifCodeExpires"]) < time())
 				exit("Link has expired.");
 		}

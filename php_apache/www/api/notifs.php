@@ -45,6 +45,8 @@
 	$type = $row["type"];
 	if ($type == "Visit")
 		$message = "has visited your profile.";
+	elseif ($type == "Message")
+		$message = "has sent you a message.";
 	elseif ($type == "Like")
 		$message = "liked you! Reciprocate it to chat with him.";
 	elseif ($type == "Match")
@@ -60,6 +62,7 @@
 		$name = $user["firstName"] . " " . $user["lastName"];
 	else
 		$name = "<!> A deleted user";
+	date_default_timezone_set("Europe/Paris");
 	$date = date("Y-m-d, H:i", strtotime($row["createdAt"]));
 	$r = $row["isRead"];
 ?>

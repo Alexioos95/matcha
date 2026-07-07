@@ -10,7 +10,9 @@
 					fetch("/api/notifs.php")
 						.then(response => response.text())
 						.then(data => {
-							if (data.trim() == "")
+							if (data.trim() != "")
+								notifContainer.innerHTML = data;
+							else if (notifContainer.children.length == 0)
 							{
 								const div = document.createElement("div");
 								div.classList.add("notif", "notif-unread", "no-notif");
@@ -20,14 +22,12 @@
 								div.append(p);
 								notifContainer.append(div);
 							}
-							else
-								notifContainer.innerHTML = data;
 						})
 						.catch();
 				}
 				notifDropdown.classList.toggle("hidden");
 			});
-			notifDropdown.addEventListener("click", (e) => {e.stopPropagation(); });
+			notifDropdown.addEventListener("click", (e) => { e.stopPropagation(); });
 			document.addEventListener("click", () => { notifDropdown.classList.add("hidden"); });
 			// Mark as read
 			function markAsRead(b)

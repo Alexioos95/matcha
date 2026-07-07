@@ -6,7 +6,6 @@ clean:
 
 fclean:
 		docker compose -f ./docker-compose.yml down -v
-		rm -rf ./php_apache/www/uploads/*
 
 re:
 		make fclean
