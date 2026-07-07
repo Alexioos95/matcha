@@ -27,5 +27,5 @@ Une fois le container ```mysql``` correctement lancé, vous pouvez ```make popul
 <img src="https://i.imgur.com/z7PDDHF.gif" alt="Login" width="500"> <img src="https://i.imgur.com/Ed7dLYA.gif" alt="Search in infinite scroll" width="500"> <img src="https://i.imgur.com/tFNGggi.gif" alt="Filtres" width="500"> <img src="https://i.imgur.com/O8wK5tB.gif" alt="Connections and chat" width="500"> <img src="https://i.imgur.com/Ot3cWqi.gif" alt="Notifications" width="500">  <img src="https://i.imgur.com/h8YCzKw.gif" alt="Editing" width="500">
 
 ## Crédits
-[Alexis Payen](https://github.com/Alexioos95/) - Designing du site et de la base de données, responsivité, gestion utilisateurs, création et édition de profil, recherche avec filtrage et tri, algorithmes, gestion status sociaux et notifications
+[Alexis Payen](https://github.com/Alexioos95/) - Designing du site et de la base de données, responsivité, gestion utilisateurs, création et édition de profil, recherche avec filtrage et tri, algorithmes, gestion status sociaux et notifications  
 [Ralph Balazs](https://github.com/balazsralph) - Designing, responsivité et implémentation du chat privé avec ses notifications
